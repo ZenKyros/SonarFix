@@ -1,0 +1,2599 @@
+{
+  "agent": "02-SolutionRankingAgent",
+  "version": "1.0",
+  "status": "ok",
+  "startedAt": "2026-09-29T05:24:10.0523796Z",
+  "finishedAt": "2026-09-29T05:24:10.7454346Z",
+  "durationSec": 0.65,
+  "inputs": {
+    "topN": 10
+  },
+  "warnings": [],
+  "errors": [],
+  "data": {
+    "topN": 10,
+    "totalRanked": 144,
+    "buildableCount": 117,
+    "candidates": [
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/EnterpriseLibrary.sln",
+        "name": "EnterpriseLibrary",
+        "score": 596.0,
+        "projectCount": 38,
+        "productProjects": 38,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "38 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/EnterpriseLibrary.sln",
+        "name": "EnterpriseLibrary",
+        "score": 372.0,
+        "projectCount": 24,
+        "productProjects": 24,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "24 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALPageMarkup/IIFCALPageMarkup.sln",
+        "name": "IIFCALPageMarkup",
+        "score": 334.0,
+        "projectCount": 40,
+        "productProjects": 40,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "40 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALUserPreferences/IIFCALUserPreferences.sln",
+        "name": "IIFCALUserPreferences",
+        "score": 310.0,
+        "projectCount": 38,
+        "productProjects": 38,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "38 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALClient/IIFCALClient.sln",
+        "name": "IIFCALClient",
+        "score": 274.0,
+        "projectCount": 35,
+        "productProjects": 35,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "35 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/EnterpriseLibrary.2010.sln",
+        "name": "EnterpriseLibrary.2010",
+        "score": 252.0,
+        "projectCount": 24,
+        "productProjects": 24,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 57,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "24 product project(s)",
+          "57 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/ExceptionHandling/ExceptionHandling.VSTS.sln",
+        "name": "ExceptionHandling.VSTS",
+        "score": 216.0,
+        "projectCount": 24,
+        "productProjects": 10,
+        "testProjects": 14,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/ExceptionHandling/ExceptionHandling.NUnit.sln",
+        "name": "ExceptionHandling.NUnit",
+        "score": 216.0,
+        "projectCount": 24,
+        "productProjects": 10,
+        "testProjects": 14,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/PolicyInjection/PolicyInjection.sln",
+        "name": "PolicyInjection",
+        "score": 216.0,
+        "projectCount": 18,
+        "productProjects": 12,
+        "testProjects": 6,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "12 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/PolicyInjection/PolicyInjection.NUnit.sln",
+        "name": "PolicyInjection.NUnit",
+        "score": 216.0,
+        "projectCount": 18,
+        "productProjects": 12,
+        "testProjects": 6,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "12 product project(s)"
+        ]
+      }
+    ],
+    "allRanked": [
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/EnterpriseLibrary.sln",
+        "name": "EnterpriseLibrary",
+        "score": 596.0,
+        "projectCount": 38,
+        "productProjects": 38,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "38 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/EnterpriseLibrary.sln",
+        "name": "EnterpriseLibrary",
+        "score": 372.0,
+        "projectCount": 24,
+        "productProjects": 24,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "24 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALPageMarkup/IIFCALPageMarkup.sln",
+        "name": "IIFCALPageMarkup",
+        "score": 334.0,
+        "projectCount": 40,
+        "productProjects": 40,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "40 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALUserPreferences/IIFCALUserPreferences.sln",
+        "name": "IIFCALUserPreferences",
+        "score": 310.0,
+        "projectCount": 38,
+        "productProjects": 38,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "38 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/EnterpriseLibrary.VSTS.sln",
+        "name": "EnterpriseLibrary.VSTS",
+        "score": 284.0,
+        "projectCount": 85,
+        "productProjects": 38,
+        "testProjects": 47,
+        "missingProjects": 2,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "38 product project(s)",
+          "2 referenced project(s) missing from disk"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/EnterpriseLibrary.NUnit.sln",
+        "name": "EnterpriseLibrary.NUnit",
+        "score": 284.0,
+        "projectCount": 85,
+        "productProjects": 38,
+        "testProjects": 47,
+        "missingProjects": 1,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "38 product project(s)",
+          "1 referenced project(s) missing from disk"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALClient/IIFCALClient.sln",
+        "name": "IIFCALClient",
+        "score": 274.0,
+        "projectCount": 35,
+        "productProjects": 35,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "35 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/EnterpriseLibrary.2010.sln",
+        "name": "EnterpriseLibrary.2010",
+        "score": 252.0,
+        "projectCount": 24,
+        "productProjects": 24,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 57,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "24 product project(s)",
+          "57 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/ExceptionHandling/ExceptionHandling.VSTS.sln",
+        "name": "ExceptionHandling.VSTS",
+        "score": 216.0,
+        "projectCount": 24,
+        "productProjects": 10,
+        "testProjects": 14,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/ExceptionHandling/ExceptionHandling.NUnit.sln",
+        "name": "ExceptionHandling.NUnit",
+        "score": 216.0,
+        "projectCount": 24,
+        "productProjects": 10,
+        "testProjects": 14,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/PolicyInjection/PolicyInjection.sln",
+        "name": "PolicyInjection",
+        "score": 216.0,
+        "projectCount": 18,
+        "productProjects": 12,
+        "testProjects": 6,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "12 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/PolicyInjection/PolicyInjection.NUnit.sln",
+        "name": "PolicyInjection.NUnit",
+        "score": 216.0,
+        "projectCount": 18,
+        "productProjects": 12,
+        "testProjects": 6,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "12 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Security/Security.NUnit.sln",
+        "name": "Security.NUnit",
+        "score": 212.0,
+        "projectCount": 23,
+        "productProjects": 10,
+        "testProjects": 13,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Security/Security.VSTS.sln",
+        "name": "Security.VSTS",
+        "score": 212.0,
+        "projectCount": 23,
+        "productProjects": 10,
+        "testProjects": 13,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Caching/Caching.NUnit.sln",
+        "name": "Caching.NUnit",
+        "score": 208.0,
+        "projectCount": 22,
+        "productProjects": 10,
+        "testProjects": 12,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Caching/Caching.VSTS.sln",
+        "name": "Caching.VSTS",
+        "score": 208.0,
+        "projectCount": 22,
+        "productProjects": 10,
+        "testProjects": 12,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALDocument/IIFCALDocument.sln",
+        "name": "IIFCALDocument",
+        "score": 106.0,
+        "projectCount": 21,
+        "productProjects": 21,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "21 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Logging/Logging.NUnit.sln",
+        "name": "Logging.NUnit",
+        "score": 104.0,
+        "projectCount": 12,
+        "productProjects": 5,
+        "testProjects": 7,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "5 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Logging/Logging.VSTS.sln",
+        "name": "Logging.VSTS",
+        "score": 104.0,
+        "projectCount": 12,
+        "productProjects": 5,
+        "testProjects": 7,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "5 product project(s)"
+        ]
+      },
+      {
+        "path": "Centera Purge Utility/FPApi.NET/Samples.sln",
+        "name": "Samples",
+        "score": 102.0,
+        "projectCount": 21,
+        "productProjects": 21,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "21 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFWorkItem Namespace Unit Tests/IIFWorkItemTest.sln",
+        "name": "IIFWorkItemTest",
+        "score": 68.0,
+        "projectCount": 14,
+        "productProjects": 1,
+        "testProjects": 13,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Data/Data.VSTS.sln",
+        "name": "Data.VSTS",
+        "score": 68.0,
+        "projectCount": 8,
+        "productProjects": 3,
+        "testProjects": 5,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "3 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Data/Data.NUnit.sln",
+        "name": "Data.NUnit",
+        "score": 68.0,
+        "projectCount": 8,
+        "productProjects": 3,
+        "testProjects": 5,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "3 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALFormFieldInfo/IIFCALFormFieldInfo.sln",
+        "name": "IIFCALFormFieldInfo",
+        "score": 58.0,
+        "projectCount": 17,
+        "productProjects": 17,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "17 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Security/Cryptography/Cryptography.NUnit.sln",
+        "name": "Cryptography.NUnit",
+        "score": 48.0,
+        "projectCount": 6,
+        "productProjects": 2,
+        "testProjects": 4,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "2 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Security/Cryptography/Cryptography.VSTS.sln",
+        "name": "Cryptography.VSTS",
+        "score": 48.0,
+        "projectCount": 6,
+        "productProjects": 2,
+        "testProjects": 4,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "2 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALDocFaxInfo/IIFCALDocFaxInfo.sln",
+        "name": "IIFCALDocFaxInfo",
+        "score": 46.0,
+        "projectCount": 16,
+        "productProjects": 16,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "16 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALPage/IIFCALPage.sln",
+        "name": "IIFCALPage",
+        "score": 46.0,
+        "projectCount": 16,
+        "productProjects": 16,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "16 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFWorkItemInformation Namespace Unit tests/IIFWorkItemInformationTest.sln",
+        "name": "IIFWorkItemInformationTest",
+        "score": 44.0,
+        "projectCount": 8,
+        "productProjects": 1,
+        "testProjects": 7,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "Centera Purge Utility/PurgeUtility/PurgeUtility/PurgeUtility.sln",
+        "name": "PurgeUtility",
+        "score": 40.0,
+        "projectCount": 3,
+        "productProjects": 3,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "3 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFPage Namespace Unit Tests/IIFPageTest.sln",
+        "name": "IIFPageTest",
+        "score": 36.0,
+        "projectCount": 6,
+        "productProjects": 1,
+        "testProjects": 5,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFQueue Namespace Unit Tests/IIFQueueTest.sln",
+        "name": "IIFQueueTest",
+        "score": 36.0,
+        "projectCount": 6,
+        "productProjects": 1,
+        "testProjects": 5,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFForm Namespace Unit Tests/IIFFormTest.sln",
+        "name": "IIFFormTest",
+        "score": 36.0,
+        "projectCount": 6,
+        "productProjects": 1,
+        "testProjects": 5,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFClient Namespace Unit tests/IIFClientTest.sln",
+        "name": "IIFClientTest",
+        "score": 36.0,
+        "projectCount": 6,
+        "productProjects": 1,
+        "testProjects": 5,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALImportClass/IIFCALImportClass.sln",
+        "name": "IIFCALImportClass",
+        "score": 34.0,
+        "projectCount": 15,
+        "productProjects": 15,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "15 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFCAL Namespace Unit Tests/IIFMasterTest.sln",
+        "name": "IIFMasterTest",
+        "score": 32.0,
+        "projectCount": 5,
+        "productProjects": 1,
+        "testProjects": 4,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFWorkflow Namespace Unit Tests/IIFWorkFlowTest.sln",
+        "name": "IIFWorkFlowTest",
+        "score": 28.0,
+        "projectCount": 4,
+        "productProjects": 1,
+        "testProjects": 3,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFUser Namespace Unit Tests/IIFUserTest.sln",
+        "name": "IIFUserTest",
+        "score": 28.0,
+        "projectCount": 4,
+        "productProjects": 1,
+        "testProjects": 3,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFQuery Namespace Unit Tests/IIFQueryTest.sln",
+        "name": "IIFQueryTest",
+        "score": 28.0,
+        "projectCount": 4,
+        "productProjects": 1,
+        "testProjects": 3,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFEnum Namespace Unit Tests/IIFEnumTest.sln",
+        "name": "IIFEnumTest",
+        "score": 28.0,
+        "projectCount": 4,
+        "productProjects": 1,
+        "testProjects": 3,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/CustomInterface/IEAScriptingService/IEAScriptingService.sln",
+        "name": "IEAScriptingService",
+        "score": 28.0,
+        "projectCount": 2,
+        "productProjects": 2,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "2 product project(s)"
+        ]
+      },
+      {
+        "path": "DomainUpdateService/DomainUpdateService.sln",
+        "name": "DomainUpdateService",
+        "score": 28.0,
+        "projectCount": 2,
+        "productProjects": 2,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "2 product project(s)"
+        ]
+      },
+      {
+        "path": "CMT/CMTCSCODE/CMT.sln",
+        "name": "CMT",
+        "score": 28.0,
+        "projectCount": 2,
+        "productProjects": 2,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "2 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFNotes Namespace Unit Tests/IIFNotesTest.sln",
+        "name": "IIFNotesTest",
+        "score": 24.0,
+        "projectCount": 3,
+        "productProjects": 1,
+        "testProjects": 2,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALFolder/IIFCALFolder.sln",
+        "name": "IIFCALFolder",
+        "score": 22.0,
+        "projectCount": 14,
+        "productProjects": 14,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "14 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALWorkitemClass/IIFCALWorkitemClass.sln",
+        "name": "IIFCALWorkitemClass",
+        "score": 22.0,
+        "projectCount": 14,
+        "productProjects": 14,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "14 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "DomainAudit/DomainAudit.sln",
+        "name": "DomainAudit",
+        "score": 20.0,
+        "projectCount": 3,
+        "productProjects": 1,
+        "testProjects": 2,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETWrapper/CALDOTNETWrapper.sln",
+        "name": "CALDOTNETWrapper",
+        "score": 20.0,
+        "projectCount": 2,
+        "productProjects": 1,
+        "testProjects": 1,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/CustomInterface/Log/Log.sln",
+        "name": "Log",
+        "score": 16.0,
+        "projectCount": 2,
+        "productProjects": 1,
+        "testProjects": 1,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/Common/Logging/Logging.sln",
+        "name": "Logging",
+        "score": 16.0,
+        "projectCount": 2,
+        "productProjects": 1,
+        "testProjects": 1,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "FullTextSearch/FullTextSearch/FullTextSearch.sln",
+        "name": "FullTextSearch",
+        "score": 16.0,
+        "projectCount": 2,
+        "productProjects": 1,
+        "testProjects": 1,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/Common/ExceptionHandler/ExceptionHandler.sln",
+        "name": "ExceptionHandler",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/Common/ClientLogger/IEAClientLogger.sln",
+        "name": "IEAClientLogger",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/CustomInterface/ExceptionLibrary/ExceptionLibrary.sln",
+        "name": "ExceptionLibrary",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/Common/ConfigManager/ConfigManager.sln",
+        "name": "ConfigManager",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/CustomInterface/IEAScriptLibrary/IEAScriptLibrary.sln",
+        "name": "IEAScriptLibrary",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "Centera Purge Utility/PurgeUtility/PurgeUtilitylog/PurgeUtilitylog.sln",
+        "name": "PurgeUtilitylog",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "DV1033/dv1033.sln",
+        "name": "dv1033",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "Centera Purge Utility/FPApi.NET/FPSDK/FPSDK.sln",
+        "name": "FPSDK",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "Centera Purge Utility/FPApi.NET/Wrapper.sln",
+        "name": "Wrapper",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CMT/CMTCSCODE/CMTlog/CMTlog.sln",
+        "name": "CMTlog",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/Common/CommonClasses/CommonClasses.sln",
+        "name": "CommonClasses",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/Common/CAC1033/CAC1033.sln",
+        "name": "CAC1033",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/Common/CACObfuscator.NET/CACObfuscator.sln",
+        "name": "CACObfuscator",
+        "score": 16.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/PrefetchRobotService/PrefetchRobotService.sln",
+        "name": "PrefetchRobotService",
+        "score": 12.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EncryptionIIF/EncryptionUtilityIIF.sln",
+        "name": "EncryptionUtilityIIF",
+        "score": 12.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/CustomInterface/IEAScriptingApp/IEAScriptingApp.sln",
+        "name": "IEAScriptingApp",
+        "score": 12.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALRole/IIFCALRole.sln",
+        "name": "IIFCALRole",
+        "score": 10.0,
+        "projectCount": 13,
+        "productProjects": 13,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "13 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALImport/IIFCALImport.sln",
+        "name": "IIFCALImport",
+        "score": 10.0,
+        "projectCount": 13,
+        "productProjects": 13,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "13 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALDocPrintInfo/IIFCALDocPrintInfo.sln",
+        "name": "IIFCALDocPrintInfo",
+        "score": 10.0,
+        "projectCount": 13,
+        "productProjects": 13,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "13 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "Centera Purge Utility/PurgeUtility/RunConsolidatedStoredProcedures/RunConsolidatedStoredProcedures.sln",
+        "name": "RunConsolidatedStoredProcedures",
+        "score": 4.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 1,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)",
+          "1 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALClientList/IIFCALClientList.sln",
+        "name": "IIFCALClientList",
+        "score": -2.0,
+        "projectCount": 12,
+        "productProjects": 12,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "12 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALWorkitemInfo/IIFCALWorkitemInfo.sln",
+        "name": "IIFCALWorkitemInfo",
+        "score": -26.0,
+        "projectCount": 10,
+        "productProjects": 10,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALVersion/IIFCALVersion.sln",
+        "name": "IIFCALVersion",
+        "score": -26.0,
+        "projectCount": 10,
+        "productProjects": 10,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "10 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALRect/IIFCALRect.sln",
+        "name": "IIFCALRect",
+        "score": -38.0,
+        "projectCount": 9,
+        "productProjects": 9,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "9 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALDocumentImport/IIFCALDocumentImport.sln",
+        "name": "IIFCALDocumentImport",
+        "score": -38.0,
+        "projectCount": 9,
+        "productProjects": 9,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "9 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALFolderChildren/IIFCALFolderChildren.sln",
+        "name": "IIFCALFolderChildren",
+        "score": -38.0,
+        "projectCount": 9,
+        "productProjects": 9,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "9 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALClientListItem/IIFCALClientListItem.sln",
+        "name": "IIFCALClientListItem",
+        "score": -38.0,
+        "projectCount": 9,
+        "productProjects": 9,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "9 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALQueue/IIFCALQueue.sln",
+        "name": "IIFCALQueue",
+        "score": -50.0,
+        "projectCount": 8,
+        "productProjects": 8,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "8 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALFormField/IIFCALFormField.sln",
+        "name": "IIFCALFormField",
+        "score": -50.0,
+        "projectCount": 8,
+        "productProjects": 8,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "8 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALMaster/IIFCALMaster.sln",
+        "name": "IIFCALMaster",
+        "score": -62.0,
+        "projectCount": 7,
+        "productProjects": 7,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "7 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALPageViewer/IIFCALPageViewer.sln",
+        "name": "IIFCALPageViewer",
+        "score": -62.0,
+        "projectCount": 7,
+        "productProjects": 7,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "7 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALWorkflowVariable/IIFCALWorkflowVariable.sln",
+        "name": "IIFCALWorkflowVariable",
+        "score": -62.0,
+        "projectCount": 7,
+        "productProjects": 7,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "7 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALPageMarkups/IIFCALPageMarkups.sln",
+        "name": "IIFCALPageMarkups",
+        "score": -74.0,
+        "projectCount": 6,
+        "productProjects": 6,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "6 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALOutQueues/IIFCALOutQueues.sln",
+        "name": "IIFCALOutQueues",
+        "score": -74.0,
+        "projectCount": 6,
+        "productProjects": 6,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "6 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALIndexFields/IIFCALIndexFields.sln",
+        "name": "IIFCALIndexFields",
+        "score": -74.0,
+        "projectCount": 6,
+        "productProjects": 6,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "6 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALQueryForm/IIFCALQueryForm.sln",
+        "name": "IIFCALQueryForm",
+        "score": -74.0,
+        "projectCount": 6,
+        "productProjects": 6,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "6 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALWorkflowVariableValue/IIFCALWorkflowVariableValue.sln",
+        "name": "IIFCALWorkflowVariableValue",
+        "score": -74.0,
+        "projectCount": 6,
+        "productProjects": 6,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "6 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALPages/IIFCALPages.sln",
+        "name": "IIFCALPages",
+        "score": -74.0,
+        "projectCount": 6,
+        "productProjects": 6,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "6 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALQueueContents/IIFCALQueueContents.sln",
+        "name": "IIFCALQueueContents",
+        "score": -74.0,
+        "projectCount": 6,
+        "productProjects": 6,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "6 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALWorkitemHistoryInfo/IIFCALWorkitemHistoryInfo.sln",
+        "name": "IIFCALWorkitemHistoryInfo",
+        "score": -74.0,
+        "projectCount": 6,
+        "productProjects": 6,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "6 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALNote/IIFCALNote.sln",
+        "name": "IIFCALNote",
+        "score": -74.0,
+        "projectCount": 6,
+        "productProjects": 6,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "6 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALDocumentImports/IIFCALDocumentImports.sln",
+        "name": "IIFCALDocumentImports",
+        "score": -86.0,
+        "projectCount": 5,
+        "productProjects": 5,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "5 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALClientListItems/IIFCALClientListItems.sln",
+        "name": "IIFCALClientListItems",
+        "score": -86.0,
+        "projectCount": 5,
+        "productProjects": 5,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "5 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALObjID/IIFCALObjID.sln",
+        "name": "IIFCALObjID",
+        "score": -86.0,
+        "projectCount": 5,
+        "productProjects": 5,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "5 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALNotes/IIFCALNotes.sln",
+        "name": "IIFCALNotes",
+        "score": -86.0,
+        "projectCount": 5,
+        "productProjects": 5,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "5 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALQueueContentItems/IIFCALQueueContentItems.sln",
+        "name": "IIFCALQueueContentItems",
+        "score": -86.0,
+        "projectCount": 5,
+        "productProjects": 5,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "5 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALFolderChildrenItems/IIFCALFolderChildrenItems.sln",
+        "name": "IIFCALFolderChildrenItems",
+        "score": -86.0,
+        "projectCount": 5,
+        "productProjects": 5,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "5 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALDocumentViewer/IIFCALDocumentViewer.sln",
+        "name": "IIFCALDocumentViewer",
+        "score": -86.0,
+        "projectCount": 5,
+        "productProjects": 5,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "5 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/EnterpriseLibrary.Tests.2010.sln",
+        "name": "EnterpriseLibrary.Tests.2010",
+        "score": -88.0,
+        "projectCount": 61,
+        "productProjects": 25,
+        "testProjects": 36,
+        "missingProjects": 7,
+        "externalRefs": 204,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "25 product project(s)",
+          "7 referenced project(s) missing from disk",
+          "204 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/EnterpriseLibrary.Tests.sln",
+        "name": "EnterpriseLibrary.Tests",
+        "score": -88.0,
+        "projectCount": 61,
+        "productProjects": 25,
+        "testProjects": 36,
+        "missingProjects": 7,
+        "externalRefs": 29,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "25 product project(s)",
+          "7 referenced project(s) missing from disk",
+          "29 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALImportClasses/IIFCALImportClasses.sln",
+        "name": "IIFCALImportClasses",
+        "score": -98.0,
+        "projectCount": 4,
+        "productProjects": 4,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "4 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALQueues/IIFCALQueues.sln",
+        "name": "IIFCALQueues",
+        "score": -98.0,
+        "projectCount": 4,
+        "productProjects": 4,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "4 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALQueryResults/IIFCALQueryResults.sln",
+        "name": "IIFCALQueryResults",
+        "score": -98.0,
+        "projectCount": 4,
+        "productProjects": 4,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "4 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALQueryForms/IIFCALQueryForms.sln",
+        "name": "IIFCALQueryForms",
+        "score": -98.0,
+        "projectCount": 4,
+        "productProjects": 4,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "4 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALFolderChild/IIFCALFolderChild.sln",
+        "name": "IIFCALFolderChild",
+        "score": -98.0,
+        "projectCount": 4,
+        "productProjects": 4,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "4 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALEnumItem/IIFCALEnumItem.sln",
+        "name": "IIFCALEnumItem",
+        "score": -98.0,
+        "projectCount": 4,
+        "productProjects": 4,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "4 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALRoles/IIFCALRoles.sln",
+        "name": "IIFCALRoles",
+        "score": -98.0,
+        "projectCount": 4,
+        "productProjects": 4,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "4 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALWorkitemClasses/IIFCALWorkitemClasses.sln",
+        "name": "IIFCALWorkitemClasses",
+        "score": -98.0,
+        "projectCount": 4,
+        "productProjects": 4,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "4 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALFormFields/IIFCALFormFields.sln",
+        "name": "IIFCALFormFields",
+        "score": -98.0,
+        "projectCount": 4,
+        "productProjects": 4,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "4 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Configuration/Console/Configuration.Console.sln",
+        "name": "Configuration.Console",
+        "score": -108.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 17,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)",
+          "17 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALWorkflowVariables/IIFCALWorkflowVariables.sln",
+        "name": "IIFCALWorkflowVariables",
+        "score": -110.0,
+        "projectCount": 3,
+        "productProjects": 3,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "3 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALEnumExtraInfoItem/IIFCALEnumExtraInfoItem.sln",
+        "name": "IIFCALEnumExtraInfoItem",
+        "score": -110.0,
+        "projectCount": 3,
+        "productProjects": 3,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "3 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALEnumExtraInfo/IIFCALEnumExtraInfo.sln",
+        "name": "IIFCALEnumExtraInfo",
+        "score": -110.0,
+        "projectCount": 3,
+        "productProjects": 3,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "3 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALWorkitemHistory/IIFCALWorkitemHistory.sln",
+        "name": "IIFCALWorkitemHistory",
+        "score": -110.0,
+        "projectCount": 3,
+        "productProjects": 3,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "3 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALFormFieldValueList/IIFCALFormFieldValueList.sln",
+        "name": "IIFCALFormFieldValueList",
+        "score": -110.0,
+        "projectCount": 3,
+        "productProjects": 3,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "3 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/IIFCALWorkitemWorkstepList/IIFCALWorkitemWorkstepList.sln",
+        "name": "IIFCALWorkitemWorkstepList",
+        "score": -110.0,
+        "projectCount": 3,
+        "productProjects": 3,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "3 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTestHarness/TestProjects/Common/Common.sln",
+        "name": "Common",
+        "score": -134.0,
+        "projectCount": 1,
+        "productProjects": 1,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "1 product project(s)",
+          "sample or archived path"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/EnterpriseLibrary.Design.Tests.sln",
+        "name": "EnterpriseLibrary.Design.Tests",
+        "score": -140.0,
+        "projectCount": 23,
+        "productProjects": 23,
+        "testProjects": 0,
+        "missingProjects": 3,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "23 product project(s)",
+          "3 referenced project(s) missing from disk"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFWorkItem Namespace Unit Tests/IIFWorkIemTest/IIFWorkIemTest.sln",
+        "name": "IIFWorkIemTest",
+        "score": -196.0,
+        "projectCount": 1,
+        "productProjects": 0,
+        "testProjects": 1,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "test-only solution"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/CALDOTNETTest/Cal.NetTest.sln",
+        "name": "Cal.NetTest",
+        "score": -200.0,
+        "projectCount": 1,
+        "productProjects": 0,
+        "testProjects": 1,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "test-only solution"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Configuration/Src/Console.sln",
+        "name": "Console",
+        "score": -204.0,
+        "projectCount": 24,
+        "productProjects": 19,
+        "testProjects": 5,
+        "missingProjects": 3,
+        "externalRefs": 3,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "19 product project(s)",
+          "3 referenced project(s) missing from disk",
+          "3 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "CALDOTNET2005/VSTS Unit Tests/IIFUser Namespace Unit Tests/IFFCALRoleTest/IFFCALRoleTest.sln",
+        "name": "IFFCALRoleTest",
+        "score": -204.0,
+        "projectCount": 1,
+        "productProjects": 0,
+        "testProjects": 1,
+        "missingProjects": 0,
+        "externalRefs": 1,
+        "needsNuGetRestore": true,
+        "requiresMSBuild": true,
+        "buildable": true,
+        "reasons": [
+          "test-only solution",
+          "1 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/EnterpriseLibrary.Design.Tests.2010.sln",
+        "name": "EnterpriseLibrary.Design.Tests.2010",
+        "score": -260.0,
+        "projectCount": 23,
+        "productProjects": 23,
+        "testProjects": 0,
+        "missingProjects": 3,
+        "externalRefs": 55,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "23 product project(s)",
+          "3 referenced project(s) missing from disk",
+          "55 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Configuration/Src/Console.2010.sln",
+        "name": "Console.2010",
+        "score": -300.0,
+        "projectCount": 24,
+        "productProjects": 19,
+        "testProjects": 5,
+        "missingProjects": 3,
+        "externalRefs": 72,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "19 product project(s)",
+          "3 referenced project(s) missing from disk",
+          "72 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Validation/Validation.VSTS.sln",
+        "name": "Validation.VSTS",
+        "score": -372.0,
+        "projectCount": 11,
+        "productProjects": 7,
+        "testProjects": 4,
+        "missingProjects": 3,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "7 product project(s)",
+          "3 referenced project(s) missing from disk"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib5src/App Blocks/Src/Validation/Validation.NUnit.sln",
+        "name": "Validation.NUnit",
+        "score": -372.0,
+        "projectCount": 11,
+        "productProjects": 7,
+        "testProjects": 4,
+        "missingProjects": 2,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "7 product project(s)",
+          "2 referenced project(s) missing from disk"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Validation/Validation.sln",
+        "name": "Validation",
+        "score": -388.0,
+        "projectCount": 12,
+        "productProjects": 6,
+        "testProjects": 6,
+        "missingProjects": 1,
+        "externalRefs": 1,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "6 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "1 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/PolicyInjection/PolicyInjection.sln",
+        "name": "PolicyInjection",
+        "score": -416.0,
+        "projectCount": 9,
+        "productProjects": 6,
+        "testProjects": 3,
+        "missingProjects": 1,
+        "externalRefs": 3,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "6 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "3 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Caching/Caching.sln",
+        "name": "Caching",
+        "score": -424.0,
+        "projectCount": 11,
+        "productProjects": 6,
+        "testProjects": 5,
+        "missingProjects": 4,
+        "externalRefs": 5,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "6 product project(s)",
+          "4 referenced project(s) missing from disk",
+          "5 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/ExceptionHandling/ExceptionHandling.sln",
+        "name": "ExceptionHandling",
+        "score": -440.0,
+        "projectCount": 12,
+        "productProjects": 5,
+        "testProjects": 7,
+        "missingProjects": 1,
+        "externalRefs": 6,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "5 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "6 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Logging/Logging.sln",
+        "name": "Logging",
+        "score": -440.0,
+        "projectCount": 11,
+        "productProjects": 5,
+        "testProjects": 6,
+        "missingProjects": 1,
+        "externalRefs": 5,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "5 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "5 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Security/Security.sln",
+        "name": "Security",
+        "score": -444.0,
+        "projectCount": 11,
+        "productProjects": 5,
+        "testProjects": 6,
+        "missingProjects": 1,
+        "externalRefs": 6,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "5 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "6 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Data/Data.sln",
+        "name": "Data",
+        "score": -456.0,
+        "projectCount": 8,
+        "productProjects": 3,
+        "testProjects": 5,
+        "missingProjects": 1,
+        "externalRefs": 3,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "3 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "3 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Security.Cryptography/Cryptography.sln",
+        "name": "Cryptography",
+        "score": -476.0,
+        "projectCount": 4,
+        "productProjects": 2,
+        "testProjects": 2,
+        "missingProjects": 1,
+        "externalRefs": 2,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "2 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "2 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Validation/Validation.2010.sln",
+        "name": "Validation.2010",
+        "score": -500.0,
+        "projectCount": 12,
+        "productProjects": 6,
+        "testProjects": 6,
+        "missingProjects": 1,
+        "externalRefs": 29,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "6 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "29 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Caching/Caching.2010.sln",
+        "name": "Caching.2010",
+        "score": -504.0,
+        "projectCount": 11,
+        "productProjects": 6,
+        "testProjects": 5,
+        "missingProjects": 4,
+        "externalRefs": 30,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "6 product project(s)",
+          "4 referenced project(s) missing from disk",
+          "30 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/ExceptionHandling/ExceptionHandling.2010.sln",
+        "name": "ExceptionHandling.2010",
+        "score": -512.0,
+        "projectCount": 12,
+        "productProjects": 5,
+        "testProjects": 7,
+        "missingProjects": 1,
+        "externalRefs": 37,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "5 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "37 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/PolicyInjection/PolicyInjection.2010.sln",
+        "name": "PolicyInjection.2010",
+        "score": -512.0,
+        "projectCount": 9,
+        "productProjects": 6,
+        "testProjects": 3,
+        "missingProjects": 1,
+        "externalRefs": 22,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "6 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "22 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Security/Security.2010.sln",
+        "name": "Security.2010",
+        "score": -516.0,
+        "projectCount": 11,
+        "productProjects": 5,
+        "testProjects": 6,
+        "missingProjects": 1,
+        "externalRefs": 30,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "5 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "30 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Security.Cryptography/Cryptography.2010.sln",
+        "name": "Cryptography.2010",
+        "score": -516.0,
+        "projectCount": 4,
+        "productProjects": 2,
+        "testProjects": 2,
+        "missingProjects": 1,
+        "externalRefs": 7,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "2 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "7 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Logging/Logging.2010.sln",
+        "name": "Logging.2010",
+        "score": -520.0,
+        "projectCount": 11,
+        "productProjects": 5,
+        "testProjects": 6,
+        "missingProjects": 1,
+        "externalRefs": 31,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "5 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "31 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/EntLib50Src/Blocks/Data/Data.2010.sln",
+        "name": "Data.2010",
+        "score": -552.0,
+        "projectCount": 8,
+        "productProjects": 3,
+        "testProjects": 5,
+        "missingProjects": 1,
+        "externalRefs": 20,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": true,
+        "buildable": false,
+        "reasons": [
+          "3 product project(s)",
+          "1 referenced project(s) missing from disk",
+          "20 cross-solution project reference(s)"
+        ]
+      },
+      {
+        "path": "IEA2008/IEAClient.sln",
+        "name": "IEAClient",
+        "score": -1000.0,
+        "projectCount": 0,
+        "productProjects": 0,
+        "testProjects": 0,
+        "missingProjects": 0,
+        "externalRefs": 0,
+        "needsNuGetRestore": false,
+        "requiresMSBuild": false,
+        "buildable": false,
+        "reasons": [
+          "no resolvable projects"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,402 @@
+{
+    "Repository":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e",
+    "ScanTime":  {
+                     "value":  "\/Date(1790656479501)\/",
+                     "DisplayHint":  2,
+                     "DateTime":  "Tuesday, September 29, 2026 10:04:39 AM"
+                 },
+    "TotalSolutions":  144,
+    "TotalProjects":  861,
+    "CSharpFiles":  6295,
+    "VBFiles":  23,
+    "TestProjects":  269,
+    "Frameworks":  [
+                       {
+                           "value":  [
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  3
+                       },
+                       {
+                           "value":  [
+                                         null,
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  4
+                       },
+                       {
+                           "value":  [
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  5
+                       },
+                       {
+                           "value":  [
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  6
+                       },
+                       {
+                           "value":  [
+                                         "v3.5",
+                                         null,
+                                         null
+                                     ],
+                           "Count":  3
+                       },
+                       {
+                           "value":  [
+                                         "v3.5",
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  4
+                       },
+                       {
+                           "value":  [
+                                         "v3.5",
+                                         null,
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  5
+                       },
+                       {
+                           "value":  [
+                                         "v4.0",
+                                         null,
+                                         null
+                                     ],
+                           "Count":  3
+                       },
+                       {
+                           "value":  [
+                                         "v4.0",
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  4
+                       },
+                       {
+                           "value":  [
+                                         "v4.0",
+                                         null,
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  5
+                       },
+                       {
+                           "value":  [
+                                         "v4.6.1",
+                                         null,
+                                         null
+                                     ],
+                           "Count":  3
+                       },
+                       {
+                           "value":  [
+                                         "v4.6.1",
+                                         null,
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  5
+                       },
+                       {
+                           "value":  [
+                                         "v4.6.1",
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  6
+                       },
+                       {
+                           "value":  [
+                                         "v4.8",
+                                         null,
+                                         null
+                                     ],
+                           "Count":  3
+                       },
+                       {
+                           "value":  [
+                                         "v4.8",
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  4
+                       },
+                       {
+                           "value":  [
+                                         "v4.8",
+                                         null,
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  5
+                       },
+                       {
+                           "value":  [
+                                         "v4.8",
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null
+                                     ],
+                           "Count":  6
+                       }
+                   ],
+    "TopSolutions":  [
+                         {
+                             "Name":  "EnterpriseLibrary.VSTS.sln",
+                             "Projects":  116,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\EnterpriseLibrary.VSTS.sln"
+                         },
+                         {
+                             "Name":  "EnterpriseLibrary.NUnit.sln",
+                             "Projects":  114,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\EnterpriseLibrary.NUnit.sln"
+                         },
+                         {
+                             "Name":  "EnterpriseLibrary.Tests.2010.sln",
+                             "Projects":  89,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.Tests.2010.sln"
+                         },
+                         {
+                             "Name":  "EnterpriseLibrary.Tests.sln",
+                             "Projects":  89,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.Tests.sln"
+                         },
+                         {
+                             "Name":  "EnterpriseLibrary.sln",
+                             "Projects":  57,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\EnterpriseLibrary.sln"
+                         },
+                         {
+                             "Name":  "IIFCALPageMarkup.sln",
+                             "Projects":  40,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALPageMarkup\\IIFCALPageMarkup.sln"
+                         },
+                         {
+                             "Name":  "EnterpriseLibrary.Design.Tests.2010.sln",
+                             "Projects":  38,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.Design.Tests.2010.sln"
+                         },
+                         {
+                             "Name":  "IIFCALUserPreferences.sln",
+                             "Projects":  38,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALUserPreferences\\IIFCALUserPreferences.sln"
+                         },
+                         {
+                             "Name":  "EnterpriseLibrary.Design.Tests.sln",
+                             "Projects":  38,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.Design.Tests.sln"
+                         },
+                         {
+                             "Name":  "IIFCALClient.sln",
+                             "Projects":  35,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALClient\\IIFCALClient.sln"
+                         },
+                         {
+                             "Name":  "EnterpriseLibrary.2010.sln",
+                             "Projects":  34,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.2010.sln"
+                         },
+                         {
+                             "Name":  "EnterpriseLibrary.sln",
+                             "Projects":  34,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.sln"
+                         },
+                         {
+                             "Name":  "ExceptionHandling.NUnit.sln",
+                             "Projects":  31,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\ExceptionHandling\\ExceptionHandling.NUnit.sln"
+                         },
+                         {
+                             "Name":  "ExceptionHandling.VSTS.sln",
+                             "Projects":  31,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\ExceptionHandling\\ExceptionHandling.VSTS.sln"
+                         },
+                         {
+                             "Name":  "Console.sln",
+                             "Projects":  30,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Configuration\\Src\\Console.sln"
+                         },
+                         {
+                             "Name":  "Console.2010.sln",
+                             "Projects":  30,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Configuration\\Src\\Console.2010.sln"
+                         },
+                         {
+                             "Name":  "Security.NUnit.sln",
+                             "Projects":  29,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Security\\Security.NUnit.sln"
+                         },
+                         {
+                             "Name":  "Security.VSTS.sln",
+                             "Projects":  29,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Security\\Security.VSTS.sln"
+                         },
+                         {
+                             "Name":  "Caching.NUnit.sln",
+                             "Projects":  28,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Caching\\Caching.NUnit.sln"
+                         },
+                         {
+                             "Name":  "Caching.VSTS.sln",
+                             "Projects":  28,
+                             "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Caching\\Caching.VSTS.sln"
+                         }
+                     ],
+    "Languages":  [
+                      "C#",
+                      "VB.NET"
+                  ],
+    "TopExtensions":  [
+                          {
+                              "Name":  ".cs",
+                              "Count":  6294
+                          },
+                          {
+                              "Name":  ".csproj",
+                              "Count":  850
+                          },
+                          {
+                              "Name":  ".config",
+                              "Count":  657
+                          },
+                          {
+                              "Name":  ".resx",
+                              "Count":  281
+                          },
+                          {
+                              "Name":  ".sln",
+                              "Count":  144
+                          },
+                          {
+                              "Name":  ".snk",
+                              "Count":  81
+                          },
+                          {
+                              "Name":  ".bmp",
+                              "Count":  77
+                          },
+                          {
+                              "Name":  ".vsmdi",
+                              "Count":  71
+                          },
+                          {
+                              "Name":  ".txt",
+                              "Count":  70
+                          },
+                          {
+                              "Name":  ".xaml",
+                              "Count":  54
+                          },
+                          {
+                              "Name":  ".h",
+                              "Count":  37
+                          },
+                          {
+                              "Name":  ".ico",
+                              "Count":  31
+                          },
+                          {
+                              "Name":  ".xml",
+                              "Count":  30
+                          },
+                          {
+                              "Name":  ".testrunconfig",
+                              "Count":  24
+                          },
+                          {
+                              "Name":  ".vb",
+                              "Count":  23
+                          },
+                          {
+                              "Name":  ".aspx",
+                              "Count":  22
+                          },
+                          {
+                              "Name":  ".bat",
+                              "Count":  20
+                          },
+                          {
+                              "Name":  ".xsd",
+                              "Count":  18
+                          },
+                          {
+                              "Name":  ".sql",
+                              "Count":  15
+                          },
+                          {
+                              "Name":  ".vbproj",
+                              "Count":  11
+                          },
+                          {
+                              "Name":  ".settings",
+                              "Count":  10
+                          },
+                          {
+                              "Name":  ".tif",
+                              "Count":  10
+                          },
+                          {
+                              "Name":  ".orderedtest",
+                              "Count":  9
+                          },
+                          {
+                              "Name":  ".ccscc",
+                              "Count":  6
+                          },
+                          {
+                              "Name":  ".cmd",
+                              "Count":  6
+                          },
+                          {
+                              "Name":  ".bas",
+                              "Count":  5
+                          },
+                          {
+                              "Name":  ".jpg",
+                              "Count":  5
+                          },
+                          {
+                              "Name":  ".FRM",
+                              "Count":  5
+                          },
+                          {
+                              "Name":  ".png",
+                              "Count":  4
+                          },
+                          {
+                              "Name":  ".gif",
+                              "Count":  4
+                          }
+                      ]
+}

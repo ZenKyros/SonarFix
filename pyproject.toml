@@ -1,0 +1,50 @@
+[project]
+name = "sonarfix"
+version = "0.1.0"
+description = "Kyros SonarFix - AI-assisted remediation of SonarQube issues"
+readme = "README.md"
+authors = [
+    { name = "Roshan Yadav", email = "roscod108@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "httpx>=0.27",
+    "pydantic>=2.9",
+    "python-dotenv>=1.0",
+    "streamlit>=1.40",
+    "langgraph>=1.2.12",
+    "langgraph-checkpoint-sqlite>=3.1.1",
+    "langchain-anthropic>=1.7.4",
+    "deepagents>=0.7.19",
+]
+
+[project.optional-dependencies]
+# Run the agents on a local model instead of Claude.
+local = [
+    "langchain-ollama>=1.1.0",
+    "langchain-openai>=1.6.6",
+]
+# Use the Claude Agent SDK (Claude Code) as the agent engine.
+# Also needs the CLI:  npm install -g @anthropic-ai/claude-code
+claude-code = [
+    "claude-agent-sdk>=0.2.160",
+]
+# Attach a SonarQube MCP server to the deepagents engine.
+mcp = [
+    "langchain-mcp-adapters>=0.3.2",
+]
+all = [
+    "langchain-ollama>=1.1.0",
+    "langchain-openai>=1.6.6",
+    "claude-agent-sdk>=0.2.160",
+    "langchain-mcp-adapters>=0.3.2",
+]
+
+[project.scripts]
+sonarfix = "sonarfix:main"
+
+[build-system]
+requires = ["uv_build>=0.12.11,<0.13.0"]
+build-backend = "uv_build"

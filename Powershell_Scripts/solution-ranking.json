@@ -1,0 +1,1010 @@
+[
+    {
+        "Solution":  "IEAClient.sln",
+        "Projects":  1,
+        "SourceFiles":  4793,
+        "Score":  4803,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\IEAClient.sln"
+    },
+    {
+        "Solution":  "EnterpriseLibrary.VSTS.sln",
+        "Projects":  116,
+        "SourceFiles":  2357,
+        "Score":  3487,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\EnterpriseLibrary.VSTS.sln"
+    },
+    {
+        "Solution":  "EnterpriseLibrary.NUnit.sln",
+        "Projects":  114,
+        "SourceFiles":  2357,
+        "Score":  3467,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\EnterpriseLibrary.NUnit.sln"
+    },
+    {
+        "Solution":  "EnterpriseLibrary.Tests.sln",
+        "Projects":  89,
+        "SourceFiles":  2308,
+        "Score":  3148,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.Tests.sln"
+    },
+    {
+        "Solution":  "EnterpriseLibrary.Tests.2010.sln",
+        "Projects":  89,
+        "SourceFiles":  2308,
+        "Score":  3118,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.Tests.2010.sln"
+    },
+    {
+        "Solution":  "EnterpriseLibrary.sln",
+        "Projects":  57,
+        "SourceFiles":  2357,
+        "Score":  2927,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\EnterpriseLibrary.sln"
+    },
+    {
+        "Solution":  "EnterpriseLibrary.sln",
+        "Projects":  34,
+        "SourceFiles":  2308,
+        "Score":  2648,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.sln"
+    },
+    {
+        "Solution":  "EnterpriseLibrary.Design.Tests.sln",
+        "Projects":  38,
+        "SourceFiles":  2308,
+        "Score":  2638,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.Design.Tests.sln"
+    },
+    {
+        "Solution":  "EnterpriseLibrary.2010.sln",
+        "Projects":  34,
+        "SourceFiles":  2308,
+        "Score":  2618,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.2010.sln"
+    },
+    {
+        "Solution":  "EnterpriseLibrary.Design.Tests.2010.sln",
+        "Projects":  38,
+        "SourceFiles":  2308,
+        "Score":  2608,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\EnterpriseLibrary.Design.Tests.2010.sln"
+    },
+    {
+        "Solution":  "Console.sln",
+        "Projects":  30,
+        "SourceFiles":  356,
+        "Score":  656,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Configuration\\Src\\Console.sln"
+    },
+    {
+        "Solution":  "Console.2010.sln",
+        "Projects":  30,
+        "SourceFiles":  356,
+        "Score":  626,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Configuration\\Src\\Console.2010.sln"
+    },
+    {
+        "Solution":  "Validation.sln",
+        "Projects":  19,
+        "SourceFiles":  411,
+        "Score":  601,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Validation\\Validation.sln"
+    },
+    {
+        "Solution":  "Validation.2010.sln",
+        "Projects":  19,
+        "SourceFiles":  411,
+        "Score":  571,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Validation\\Validation.2010.sln"
+    },
+    {
+        "Solution":  "Logging.sln",
+        "Projects":  17,
+        "SourceFiles":  385,
+        "Score":  555,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Logging\\Logging.sln"
+    },
+    {
+        "Solution":  "Logging.2010.sln",
+        "Projects":  17,
+        "SourceFiles":  385,
+        "Score":  525,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Logging\\Logging.2010.sln"
+    },
+    {
+        "Solution":  "Security.VSTS.sln",
+        "Projects":  29,
+        "SourceFiles":  246,
+        "Score":  506,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Security\\Security.VSTS.sln"
+    },
+    {
+        "Solution":  "Security.NUnit.sln",
+        "Projects":  29,
+        "SourceFiles":  246,
+        "Score":  506,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Security\\Security.NUnit.sln"
+    },
+    {
+        "Solution":  "IIFCALPageMarkup.sln",
+        "Projects":  40,
+        "SourceFiles":  78,
+        "Score":  478,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALPageMarkup\\IIFCALPageMarkup.sln"
+    },
+    {
+        "Solution":  "IIFCALUserPreferences.sln",
+        "Projects":  38,
+        "SourceFiles":  74,
+        "Score":  454,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALUserPreferences\\IIFCALUserPreferences.sln"
+    },
+    {
+        "Solution":  "IIFCALClient.sln",
+        "Projects":  35,
+        "SourceFiles":  68,
+        "Score":  418,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALClient\\IIFCALClient.sln"
+    },
+    {
+        "Solution":  "Validation.VSTS.sln",
+        "Projects":  21,
+        "SourceFiles":  215,
+        "Score":  395,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Validation\\Validation.VSTS.sln"
+    },
+    {
+        "Solution":  "ExceptionHandling.NUnit.sln",
+        "Projects":  31,
+        "SourceFiles":  105,
+        "Score":  385,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\ExceptionHandling\\ExceptionHandling.NUnit.sln"
+    },
+    {
+        "Solution":  "ExceptionHandling.VSTS.sln",
+        "Projects":  31,
+        "SourceFiles":  105,
+        "Score":  385,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\ExceptionHandling\\ExceptionHandling.VSTS.sln"
+    },
+    {
+        "Solution":  "PolicyInjection.sln",
+        "Projects":  23,
+        "SourceFiles":  149,
+        "Score":  379,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\PolicyInjection\\PolicyInjection.sln"
+    },
+    {
+        "Solution":  "Validation.NUnit.sln",
+        "Projects":  19,
+        "SourceFiles":  215,
+        "Score":  375,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Validation\\Validation.NUnit.sln"
+    },
+    {
+        "Solution":  "Caching.NUnit.sln",
+        "Projects":  28,
+        "SourceFiles":  124,
+        "Score":  374,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Caching\\Caching.NUnit.sln"
+    },
+    {
+        "Solution":  "Caching.VSTS.sln",
+        "Projects":  28,
+        "SourceFiles":  124,
+        "Score":  374,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Caching\\Caching.VSTS.sln"
+    },
+    {
+        "Solution":  "Logging.VSTS.sln",
+        "Projects":  17,
+        "SourceFiles":  232,
+        "Score":  372,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Logging\\Logging.VSTS.sln"
+    },
+    {
+        "Solution":  "Logging.NUnit.sln",
+        "Projects":  17,
+        "SourceFiles":  232,
+        "Score":  372,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Logging\\Logging.NUnit.sln"
+    },
+    {
+        "Solution":  "Caching.sln",
+        "Projects":  20,
+        "SourceFiles":  149,
+        "Score":  349,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Caching\\Caching.sln"
+    },
+    {
+        "Solution":  "PolicyInjection.NUnit.sln",
+        "Projects":  23,
+        "SourceFiles":  149,
+        "Score":  349,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\PolicyInjection\\PolicyInjection.NUnit.sln"
+    },
+    {
+        "Solution":  "ExceptionHandling.sln",
+        "Projects":  18,
+        "SourceFiles":  155,
+        "Score":  335,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\ExceptionHandling\\ExceptionHandling.sln"
+    },
+    {
+        "Solution":  "Data.sln",
+        "Projects":  14,
+        "SourceFiles":  184,
+        "Score":  324,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Data\\Data.sln"
+    },
+    {
+        "Solution":  "Security.sln",
+        "Projects":  17,
+        "SourceFiles":  150,
+        "Score":  320,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Security\\Security.sln"
+    },
+    {
+        "Solution":  "Caching.2010.sln",
+        "Projects":  20,
+        "SourceFiles":  149,
+        "Score":  319,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Caching\\Caching.2010.sln"
+    },
+    {
+        "Solution":  "ExceptionHandling.2010.sln",
+        "Projects":  18,
+        "SourceFiles":  155,
+        "Score":  305,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\ExceptionHandling\\ExceptionHandling.2010.sln"
+    },
+    {
+        "Solution":  "Data.2010.sln",
+        "Projects":  14,
+        "SourceFiles":  184,
+        "Score":  294,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Data\\Data.2010.sln"
+    },
+    {
+        "Solution":  "Security.2010.sln",
+        "Projects":  17,
+        "SourceFiles":  150,
+        "Score":  290,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Security\\Security.2010.sln"
+    },
+    {
+        "Solution":  "IIFCALDocument.sln",
+        "Projects":  21,
+        "SourceFiles":  40,
+        "Score":  250,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALDocument\\IIFCALDocument.sln"
+    },
+    {
+        "Solution":  "Samples.sln",
+        "Projects":  21,
+        "SourceFiles":  40,
+        "Score":  250,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\Centera Purge Utility\\FPApi.NET\\Samples.sln"
+    },
+    {
+        "Solution":  "PolicyInjection.sln",
+        "Projects":  14,
+        "SourceFiles":  94,
+        "Score":  234,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\PolicyInjection\\PolicyInjection.sln"
+    },
+    {
+        "Solution":  "Cryptography.sln",
+        "Projects":  10,
+        "SourceFiles":  127,
+        "Score":  227,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Security.Cryptography\\Cryptography.sln"
+    },
+    {
+        "Solution":  "PolicyInjection.2010.sln",
+        "Projects":  14,
+        "SourceFiles":  94,
+        "Score":  204,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\PolicyInjection\\PolicyInjection.2010.sln"
+    },
+    {
+        "Solution":  "IIFCALFormFieldInfo.sln",
+        "Projects":  17,
+        "SourceFiles":  32,
+        "Score":  202,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALFormFieldInfo\\IIFCALFormFieldInfo.sln"
+    },
+    {
+        "Solution":  "Cryptography.VSTS.sln",
+        "Projects":  11,
+        "SourceFiles":  121,
+        "Score":  201,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Security\\Cryptography\\Cryptography.VSTS.sln"
+    },
+    {
+        "Solution":  "Cryptography.2010.sln",
+        "Projects":  10,
+        "SourceFiles":  127,
+        "Score":  197,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib50Src\\Blocks\\Security.Cryptography\\Cryptography.2010.sln"
+    },
+    {
+        "Solution":  "Cryptography.NUnit.sln",
+        "Projects":  10,
+        "SourceFiles":  121,
+        "Score":  191,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Security\\Cryptography\\Cryptography.NUnit.sln"
+    },
+    {
+        "Solution":  "IIFCALPage.sln",
+        "Projects":  16,
+        "SourceFiles":  30,
+        "Score":  190,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALPage\\IIFCALPage.sln"
+    },
+    {
+        "Solution":  "IIFCALDocFaxInfo.sln",
+        "Projects":  16,
+        "SourceFiles":  30,
+        "Score":  190,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALDocFaxInfo\\IIFCALDocFaxInfo.sln"
+    },
+    {
+        "Solution":  "Data.VSTS.sln",
+        "Projects":  13,
+        "SourceFiles":  86,
+        "Score":  186,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Data\\Data.VSTS.sln"
+    },
+    {
+        "Solution":  "Data.NUnit.sln",
+        "Projects":  13,
+        "SourceFiles":  86,
+        "Score":  186,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Data\\Data.NUnit.sln"
+    },
+    {
+        "Solution":  "IIFCALImportClass.sln",
+        "Projects":  15,
+        "SourceFiles":  28,
+        "Score":  178,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALImportClass\\IIFCALImportClass.sln"
+    },
+    {
+        "Solution":  "IIFCALFolder.sln",
+        "Projects":  14,
+        "SourceFiles":  26,
+        "Score":  166,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALFolder\\IIFCALFolder.sln"
+    },
+    {
+        "Solution":  "IIFCALWorkitemClass.sln",
+        "Projects":  14,
+        "SourceFiles":  26,
+        "Score":  166,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALWorkitemClass\\IIFCALWorkitemClass.sln"
+    },
+    {
+        "Solution":  "IIFCALRole.sln",
+        "Projects":  13,
+        "SourceFiles":  24,
+        "Score":  154,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALRole\\IIFCALRole.sln"
+    },
+    {
+        "Solution":  "IIFCALDocPrintInfo.sln",
+        "Projects":  13,
+        "SourceFiles":  24,
+        "Score":  154,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALDocPrintInfo\\IIFCALDocPrintInfo.sln"
+    },
+    {
+        "Solution":  "IIFCALImport.sln",
+        "Projects":  13,
+        "SourceFiles":  24,
+        "Score":  154,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALImport\\IIFCALImport.sln"
+    },
+    {
+        "Solution":  "IIFWorkItemTest.sln",
+        "Projects":  15,
+        "SourceFiles":  51,
+        "Score":  151,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFWorkItem Namespace Unit Tests\\IIFWorkItemTest.sln"
+    },
+    {
+        "Solution":  "IIFCALClientList.sln",
+        "Projects":  12,
+        "SourceFiles":  22,
+        "Score":  142,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALClientList\\IIFCALClientList.sln"
+    },
+    {
+        "Solution":  "IIFCALWorkitemInfo.sln",
+        "Projects":  10,
+        "SourceFiles":  18,
+        "Score":  118,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALWorkitemInfo\\IIFCALWorkitemInfo.sln"
+    },
+    {
+        "Solution":  "IIFCALVersion.sln",
+        "Projects":  10,
+        "SourceFiles":  18,
+        "Score":  118,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALVersion\\IIFCALVersion.sln"
+    },
+    {
+        "Solution":  "IIFCALClientListItem.sln",
+        "Projects":  9,
+        "SourceFiles":  16,
+        "Score":  106,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALClientListItem\\IIFCALClientListItem.sln"
+    },
+    {
+        "Solution":  "IIFCALFolderChildren.sln",
+        "Projects":  9,
+        "SourceFiles":  16,
+        "Score":  106,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALFolderChildren\\IIFCALFolderChildren.sln"
+    },
+    {
+        "Solution":  "IIFCALRect.sln",
+        "Projects":  9,
+        "SourceFiles":  16,
+        "Score":  106,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALRect\\IIFCALRect.sln"
+    },
+    {
+        "Solution":  "IIFCALDocumentImport.sln",
+        "Projects":  9,
+        "SourceFiles":  16,
+        "Score":  106,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALDocumentImport\\IIFCALDocumentImport.sln"
+    },
+    {
+        "Solution":  "IIFCALQueue.sln",
+        "Projects":  8,
+        "SourceFiles":  14,
+        "Score":  94,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALQueue\\IIFCALQueue.sln"
+    },
+    {
+        "Solution":  "IIFCALFormField.sln",
+        "Projects":  8,
+        "SourceFiles":  14,
+        "Score":  94,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALFormField\\IIFCALFormField.sln"
+    },
+    {
+        "Solution":  "CALDOTNETWrapper.sln",
+        "Projects":  2,
+        "SourceFiles":  67,
+        "Score":  87,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETWrapper\\CALDOTNETWrapper.sln"
+    },
+    {
+        "Solution":  "IIFCALMaster.sln",
+        "Projects":  7,
+        "SourceFiles":  12,
+        "Score":  82,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALMaster\\IIFCALMaster.sln"
+    },
+    {
+        "Solution":  "IIFCALPageViewer.sln",
+        "Projects":  7,
+        "SourceFiles":  12,
+        "Score":  82,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALPageViewer\\IIFCALPageViewer.sln"
+    },
+    {
+        "Solution":  "IIFCALWorkflowVariable.sln",
+        "Projects":  7,
+        "SourceFiles":  12,
+        "Score":  82,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALWorkflowVariable\\IIFCALWorkflowVariable.sln"
+    },
+    {
+        "Solution":  "IIFCALQueryForm.sln",
+        "Projects":  6,
+        "SourceFiles":  10,
+        "Score":  70,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALQueryForm\\IIFCALQueryForm.sln"
+    },
+    {
+        "Solution":  "IIFCALWorkitemHistoryInfo.sln",
+        "Projects":  6,
+        "SourceFiles":  10,
+        "Score":  70,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALWorkitemHistoryInfo\\IIFCALWorkitemHistoryInfo.sln"
+    },
+    {
+        "Solution":  "IIFCALQueueContents.sln",
+        "Projects":  6,
+        "SourceFiles":  10,
+        "Score":  70,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALQueueContents\\IIFCALQueueContents.sln"
+    },
+    {
+        "Solution":  "IIFCALPages.sln",
+        "Projects":  6,
+        "SourceFiles":  10,
+        "Score":  70,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALPages\\IIFCALPages.sln"
+    },
+    {
+        "Solution":  "IIFCALOutQueues.sln",
+        "Projects":  6,
+        "SourceFiles":  10,
+        "Score":  70,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALOutQueues\\IIFCALOutQueues.sln"
+    },
+    {
+        "Solution":  "IIFCALPageMarkups.sln",
+        "Projects":  6,
+        "SourceFiles":  10,
+        "Score":  70,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALPageMarkups\\IIFCALPageMarkups.sln"
+    },
+    {
+        "Solution":  "IIFCALIndexFields.sln",
+        "Projects":  6,
+        "SourceFiles":  10,
+        "Score":  70,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALIndexFields\\IIFCALIndexFields.sln"
+    },
+    {
+        "Solution":  "IIFCALNote.sln",
+        "Projects":  6,
+        "SourceFiles":  10,
+        "Score":  70,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALNote\\IIFCALNote.sln"
+    },
+    {
+        "Solution":  "IIFCALWorkflowVariableValue.sln",
+        "Projects":  6,
+        "SourceFiles":  10,
+        "Score":  70,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALWorkflowVariableValue\\IIFCALWorkflowVariableValue.sln"
+    },
+    {
+        "Solution":  "CommonClasses.sln",
+        "Projects":  1,
+        "SourceFiles":  57,
+        "Score":  67,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\Common\\CommonClasses\\CommonClasses.sln"
+    },
+    {
+        "Solution":  "Common.sln",
+        "Projects":  1,
+        "SourceFiles":  57,
+        "Score":  67,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\Common\\Common.sln"
+    },
+    {
+        "Solution":  "IIFWorkItemInformationTest.sln",
+        "Projects":  9,
+        "SourceFiles":  21,
+        "Score":  61,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFWorkItemInformation Namespace Unit tests\\IIFWorkItemInformationTest.sln"
+    },
+    {
+        "Solution":  "PurgeUtility.sln",
+        "Projects":  3,
+        "SourceFiles":  29,
+        "Score":  59,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\Centera Purge Utility\\PurgeUtility\\PurgeUtility\\PurgeUtility.sln"
+    },
+    {
+        "Solution":  "IIFCALQueueContentItems.sln",
+        "Projects":  5,
+        "SourceFiles":  8,
+        "Score":  58,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALQueueContentItems\\IIFCALQueueContentItems.sln"
+    },
+    {
+        "Solution":  "IIFCALDocumentImports.sln",
+        "Projects":  5,
+        "SourceFiles":  8,
+        "Score":  58,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALDocumentImports\\IIFCALDocumentImports.sln"
+    },
+    {
+        "Solution":  "IIFCALNotes.sln",
+        "Projects":  5,
+        "SourceFiles":  8,
+        "Score":  58,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALNotes\\IIFCALNotes.sln"
+    },
+    {
+        "Solution":  "IIFCALClientListItems.sln",
+        "Projects":  5,
+        "SourceFiles":  8,
+        "Score":  58,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALClientListItems\\IIFCALClientListItems.sln"
+    },
+    {
+        "Solution":  "IIFCALFolderChildrenItems.sln",
+        "Projects":  5,
+        "SourceFiles":  8,
+        "Score":  58,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALFolderChildrenItems\\IIFCALFolderChildrenItems.sln"
+    },
+    {
+        "Solution":  "IIFCALObjID.sln",
+        "Projects":  5,
+        "SourceFiles":  8,
+        "Score":  58,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALObjID\\IIFCALObjID.sln"
+    },
+    {
+        "Solution":  "IIFCALDocumentViewer.sln",
+        "Projects":  5,
+        "SourceFiles":  8,
+        "Score":  58,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALDocumentViewer\\IIFCALDocumentViewer.sln"
+    },
+    {
+        "Solution":  "CMT.sln",
+        "Projects":  2,
+        "SourceFiles":  31,
+        "Score":  51,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CMT\\CMTCSCODE\\CMT.sln"
+    },
+    {
+        "Solution":  "DomainAudit.sln",
+        "Projects":  3,
+        "SourceFiles":  20,
+        "Score":  50,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\DomainAudit\\DomainAudit.sln"
+    },
+    {
+        "Solution":  "Wrapper.sln",
+        "Projects":  1,
+        "SourceFiles":  40,
+        "Score":  50,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\Centera Purge Utility\\FPApi.NET\\Wrapper.sln"
+    },
+    {
+        "Solution":  "IIFCALRoles.sln",
+        "Projects":  4,
+        "SourceFiles":  6,
+        "Score":  46,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALRoles\\IIFCALRoles.sln"
+    },
+    {
+        "Solution":  "IIFCALQueryForms.sln",
+        "Projects":  4,
+        "SourceFiles":  6,
+        "Score":  46,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALQueryForms\\IIFCALQueryForms.sln"
+    },
+    {
+        "Solution":  "IIFCALWorkitemClasses.sln",
+        "Projects":  4,
+        "SourceFiles":  6,
+        "Score":  46,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALWorkitemClasses\\IIFCALWorkitemClasses.sln"
+    },
+    {
+        "Solution":  "IIFCALQueues.sln",
+        "Projects":  4,
+        "SourceFiles":  6,
+        "Score":  46,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALQueues\\IIFCALQueues.sln"
+    },
+    {
+        "Solution":  "IIFCALQueryResults.sln",
+        "Projects":  4,
+        "SourceFiles":  6,
+        "Score":  46,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALQueryResults\\IIFCALQueryResults.sln"
+    },
+    {
+        "Solution":  "IIFCALFormFields.sln",
+        "Projects":  4,
+        "SourceFiles":  6,
+        "Score":  46,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALFormFields\\IIFCALFormFields.sln"
+    },
+    {
+        "Solution":  "IIFCALFolderChild.sln",
+        "Projects":  4,
+        "SourceFiles":  6,
+        "Score":  46,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALFolderChild\\IIFCALFolderChild.sln"
+    },
+    {
+        "Solution":  "IIFCALImportClasses.sln",
+        "Projects":  4,
+        "SourceFiles":  6,
+        "Score":  46,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALImportClasses\\IIFCALImportClasses.sln"
+    },
+    {
+        "Solution":  "IIFCALEnumItem.sln",
+        "Projects":  4,
+        "SourceFiles":  6,
+        "Score":  46,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALEnumItem\\IIFCALEnumItem.sln"
+    },
+    {
+        "Solution":  "FullTextSearch.sln",
+        "Projects":  2,
+        "SourceFiles":  25,
+        "Score":  45,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\FullTextSearch\\FullTextSearch\\FullTextSearch.sln"
+    },
+    {
+        "Solution":  "IEAScriptingService.sln",
+        "Projects":  3,
+        "SourceFiles":  12,
+        "Score":  42,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\CustomInterface\\IEAScriptingService\\IEAScriptingService.sln"
+    },
+    {
+        "Solution":  "IIFPageTest.sln",
+        "Projects":  7,
+        "SourceFiles":  20,
+        "Score":  40,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFPage Namespace Unit Tests\\IIFPageTest.sln"
+    },
+    {
+        "Solution":  "Cal.NetTest.sln",
+        "Projects":  1,
+        "SourceFiles":  79,
+        "Score":  39,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTest\\Cal.NetTest.sln"
+    },
+    {
+        "Solution":  "IIFClientTest.sln",
+        "Projects":  7,
+        "SourceFiles":  18,
+        "Score":  38,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFClient Namespace Unit tests\\IIFClientTest.sln"
+    },
+    {
+        "Solution":  "IIFQueueTest.sln",
+        "Projects":  7,
+        "SourceFiles":  18,
+        "Score":  38,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFQueue Namespace Unit Tests\\IIFQueueTest.sln"
+    },
+    {
+        "Solution":  "IIFFormTest.sln",
+        "Projects":  7,
+        "SourceFiles":  17,
+        "Score":  37,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFForm Namespace Unit Tests\\IIFFormTest.sln"
+    },
+    {
+        "Solution":  "IIFCALFormFieldValueList.sln",
+        "Projects":  3,
+        "SourceFiles":  4,
+        "Score":  34,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALFormFieldValueList\\IIFCALFormFieldValueList.sln"
+    },
+    {
+        "Solution":  "IIFCALEnumExtraInfoItem.sln",
+        "Projects":  3,
+        "SourceFiles":  4,
+        "Score":  34,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALEnumExtraInfoItem\\IIFCALEnumExtraInfoItem.sln"
+    },
+    {
+        "Solution":  "IIFCALEnumExtraInfo.sln",
+        "Projects":  3,
+        "SourceFiles":  4,
+        "Score":  34,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALEnumExtraInfo\\IIFCALEnumExtraInfo.sln"
+    },
+    {
+        "Solution":  "IIFCALWorkitemWorkstepList.sln",
+        "Projects":  3,
+        "SourceFiles":  4,
+        "Score":  34,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALWorkitemWorkstepList\\IIFCALWorkitemWorkstepList.sln"
+    },
+    {
+        "Solution":  "IIFCALWorkitemHistory.sln",
+        "Projects":  3,
+        "SourceFiles":  4,
+        "Score":  34,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALWorkitemHistory\\IIFCALWorkitemHistory.sln"
+    },
+    {
+        "Solution":  "IIFCALWorkflowVariables.sln",
+        "Projects":  3,
+        "SourceFiles":  4,
+        "Score":  34,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\CALDOTNETTestHarness\\TestProjects\\IIFCALWorkflowVariables\\IIFCALWorkflowVariables.sln"
+    },
+    {
+        "Solution":  "DomainUpdateService.sln",
+        "Projects":  2,
+        "SourceFiles":  11,
+        "Score":  31,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\DomainUpdateService\\DomainUpdateService.sln"
+    },
+    {
+        "Solution":  "IIFMasterTest.sln",
+        "Projects":  6,
+        "SourceFiles":  18,
+        "Score":  28,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFCAL Namespace Unit Tests\\IIFMasterTest.sln"
+    },
+    {
+        "Solution":  "Logging.sln",
+        "Projects":  2,
+        "SourceFiles":  5,
+        "Score":  25,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\Common\\Logging\\Logging.sln"
+    },
+    {
+        "Solution":  "Configuration.Console.sln",
+        "Projects":  1,
+        "SourceFiles":  15,
+        "Score":  25,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EntLib5src\\App Blocks\\Src\\Configuration\\Console\\Configuration.Console.sln"
+    },
+    {
+        "Solution":  "Log.sln",
+        "Projects":  2,
+        "SourceFiles":  4,
+        "Score":  24,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\CustomInterface\\Log\\Log.sln"
+    },
+    {
+        "Solution":  "FPSDK.sln",
+        "Projects":  1,
+        "SourceFiles":  13,
+        "Score":  23,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\Centera Purge Utility\\FPApi.NET\\FPSDK\\FPSDK.sln"
+    },
+    {
+        "Solution":  "IEAScriptingApp.sln",
+        "Projects":  1,
+        "SourceFiles":  12,
+        "Score":  22,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\CustomInterface\\IEAScriptingApp\\IEAScriptingApp.sln"
+    },
+    {
+        "Solution":  "ExceptionHandler.sln",
+        "Projects":  1,
+        "SourceFiles":  7,
+        "Score":  17,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\Common\\ExceptionHandler\\ExceptionHandler.sln"
+    },
+    {
+        "Solution":  "EncryptionUtilityIIF.sln",
+        "Projects":  1,
+        "SourceFiles":  6,
+        "Score":  16,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\EncryptionIIF\\EncryptionUtilityIIF.sln"
+    },
+    {
+        "Solution":  "PrefetchRobotService.sln",
+        "Projects":  1,
+        "SourceFiles":  6,
+        "Score":  16,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\PrefetchRobotService\\PrefetchRobotService.sln"
+    },
+    {
+        "Solution":  "CAC1033.sln",
+        "Projects":  1,
+        "SourceFiles":  6,
+        "Score":  16,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\Common\\CAC1033\\CAC1033.sln"
+    },
+    {
+        "Solution":  "IEAScriptLibrary.sln",
+        "Projects":  1,
+        "SourceFiles":  6,
+        "Score":  16,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\CustomInterface\\IEAScriptLibrary\\IEAScriptLibrary.sln"
+    },
+    {
+        "Solution":  "IEAClientLogger.sln",
+        "Projects":  1,
+        "SourceFiles":  5,
+        "Score":  15,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\Common\\ClientLogger\\IEAClientLogger.sln"
+    },
+    {
+        "Solution":  "ExceptionLibrary.sln",
+        "Projects":  1,
+        "SourceFiles":  5,
+        "Score":  15,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\CustomInterface\\ExceptionLibrary\\ExceptionLibrary.sln"
+    },
+    {
+        "Solution":  "PurgeUtilitylog.sln",
+        "Projects":  1,
+        "SourceFiles":  4,
+        "Score":  14,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\Centera Purge Utility\\PurgeUtility\\PurgeUtilitylog\\PurgeUtilitylog.sln"
+    },
+    {
+        "Solution":  "ConfigManager.sln",
+        "Projects":  1,
+        "SourceFiles":  3,
+        "Score":  13,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\Common\\ConfigManager\\ConfigManager.sln"
+    },
+    {
+        "Solution":  "CMTlog.sln",
+        "Projects":  1,
+        "SourceFiles":  3,
+        "Score":  13,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CMT\\CMTCSCODE\\CMTlog\\CMTlog.sln"
+    },
+    {
+        "Solution":  "IIFUserTest.sln",
+        "Projects":  5,
+        "SourceFiles":  13,
+        "Score":  13,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFUser Namespace Unit Tests\\IIFUserTest.sln"
+    },
+    {
+        "Solution":  "RunConsolidatedStoredProcedures.sln",
+        "Projects":  1,
+        "SourceFiles":  2,
+        "Score":  12,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\Centera Purge Utility\\PurgeUtility\\RunConsolidatedStoredProcedures\\RunConsolidatedStoredProcedures.sln"
+    },
+    {
+        "Solution":  "IIFQueryTest.sln",
+        "Projects":  5,
+        "SourceFiles":  12,
+        "Score":  12,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFQuery Namespace Unit Tests\\IIFQueryTest.sln"
+    },
+    {
+        "Solution":  "CACObfuscator.sln",
+        "Projects":  1,
+        "SourceFiles":  0,
+        "Score":  10,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\IEA2008\\Common\\CACObfuscator.NET\\CACObfuscator.sln"
+    },
+    {
+        "Solution":  "IIFWorkFlowTest.sln",
+        "Projects":  5,
+        "SourceFiles":  10,
+        "Score":  10,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFWorkflow Namespace Unit Tests\\IIFWorkFlowTest.sln"
+    },
+    {
+        "Solution":  "dv1033.sln",
+        "Projects":  1,
+        "SourceFiles":  0,
+        "Score":  10,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\DV1033\\dv1033.sln"
+    },
+    {
+        "Solution":  "IIFEnumTest.sln",
+        "Projects":  5,
+        "SourceFiles":  9,
+        "Score":  9,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFEnum Namespace Unit Tests\\IIFEnumTest.sln"
+    },
+    {
+        "Solution":  "IIFNotesTest.sln",
+        "Projects":  4,
+        "SourceFiles":  7,
+        "Score":  -3,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFNotes Namespace Unit Tests\\IIFNotesTest.sln"
+    },
+    {
+        "Solution":  "IFFCALRoleTest.sln",
+        "Projects":  1,
+        "SourceFiles":  4,
+        "Score":  -36,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFUser Namespace Unit Tests\\IFFCALRoleTest\\IFFCALRoleTest.sln"
+    },
+    {
+        "Solution":  "IIFWorkIemTest.sln",
+        "Projects":  1,
+        "SourceFiles":  2,
+        "Score":  -38,
+        "Path":  "C:\\Users\\YadavRos\\Downloads\\10.0-InfoImage11.10Support-CK@5d21743554e\\CALDOTNET2005\\VSTS Unit Tests\\IIFWorkItem Namespace Unit Tests\\IIFWorkIemTest\\IIFWorkIemTest.sln"
+    }
+]
