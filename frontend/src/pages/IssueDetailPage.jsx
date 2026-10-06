@@ -5,10 +5,12 @@ import SeverityBadge from "../components/SeverityBadge";
 import ConfidenceBar from "../components/ConfidenceBar";
 import ErrorBanner from "../components/ErrorBanner";
 import DiffBlock from "../components/DiffBlock";
+import { useStatus } from "../status";
 
 export default function IssueDetailPage() {
   const { issueId } = useParams();
   const navigate = useNavigate();
+  const { track } = useStatus();
 
   const [detail, setDetail] = useState(null);
   const [state, setState] = useState(null);
@@ -57,11 +59,11 @@ export default function IssueDetailPage() {
     }
   }, [busy]);
 
-  const run = async (label, fn) => {
+  const run = async (label, statusLabel, fn) => {
     setError(null);
     setBusy(label);
     try {
-      await fn();
+      await track(statusLabel, fn);
       await loadAll();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));
@@ -94,6 +96,18 @@ export default function IssueDetailPage() {
       </div>
 
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
+
+      <ol className="progress">
+        {["1. Analyze", "2. Review plan", "3. Fix"].map((label, i) => {
+          const done = ["applied", "fix_generated"].includes(state.status);
+          const current = done ? 3 : state.awaiting_approval ? 1 : hasPlan ? 1 : 0;
+          return (
+            <li key={label} className={done || i < current ? "done" : i === current ? "current" : ""}>
+              {label}
+            </li>
+          );
+        })}
+      </ol>
 
       <section className="card">
         <h1 className="issue-title">{issue.message}</h1>
@@ -132,7 +146,7 @@ export default function IssueDetailPage() {
       <div className="button-row">
         <button
           className={hasPlan ? "btn btn-outline" : "btn btn-primary"}
-          onClick={() => run("analyze", () => api.analyzeIssue(issueId))}
+          onClick={() => run("analyze", "Claude is analyzing the issue…", () => api.analyzeIssue(issueId))}
           disabled={busy === "analyze"}
         >
           {busy === "analyze"
@@ -144,14 +158,14 @@ export default function IssueDetailPage() {
       </div>
 
       {busy === "analyze" && (
-        <section className="card" style={{ borderColor: "#4f46e5", backgroundColor: "#f0f4ff" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-            <span style={{ fontSize: "20px", animation: "spin 1s linear infinite" }}>🤖</span>
-            <h3 style={{ margin: 0, color: "#4f46e5" }}>Claude is analyzing…</h3>
+        <section className="card analyzing">
+          <div className="analyzing-head">
+            <span className="analyzing-icon">🤖</span>
+            <h3>Claude is analyzing…</h3>
           </div>
-          <p style={{ color: "#666", fontSize: "14px", lineHeight: "1.6", minHeight: "60px", fontFamily: "monospace" }}>
-            {displayedThinking || "Starting analysis…"}
-            <span style={{ animation: "blink 1s infinite", marginLeft: "4px" }}>▌</span>
+          <p className="analyzing-text">
+            {displayedThinking || "Reading the code and the rule. This can take a minute or two."}
+            <span className="cursor">▌</span>
           </p>
         </section>
       )}
@@ -205,14 +219,14 @@ export default function IssueDetailPage() {
               <div className="button-row">
                 <button
                   className="btn btn-primary"
-                  onClick={() => run("approve", () => api.approve(issueId, feedback))}
+                  onClick={() => run("approve", "Applying the fix and generating the PR…", () => api.approve(issueId, feedback))}
                   disabled={busy === "approve"}
                 >
                   {busy === "approve" ? "Applying fix…" : "Approve and generate fix"}
                 </button>
                 <button
                   className="btn"
-                  onClick={() => run("reject", () => api.reject(issueId, feedback))}
+                  onClick={() => run("reject", "Rejecting the plan…", () => api.reject(issueId, feedback))}
                   disabled={busy === "reject"}
                 >
                   {busy === "reject" ? "Rejecting…" : "Reject plan"}
@@ -227,19 +241,39 @@ export default function IssueDetailPage() {
         </section>
       )}
 
-      {["applied", "failed", "fix_generated"].includes(state.status) && (
-        <FixSection state={state} />
+      {["applied", "failed", "fix_generated", "build_passed"].includes(state.status) && (
+        <FixSection
+          state={state}
+          busy={busy}
+          onCreatePr={() =>
+            run("createPr", "Pushing the branch and opening the Bitbucket pull request…", () =>
+              api.createIssuePullRequest(issueId)
+            )
+          }
+        />
       )}
     </div>
   );
 }
 
-function FixSection({ state }) {
+function FixSection({ state, busy, onCreatePr }) {
   if (state.status === "failed") {
+    const run = state.run || {};
     return (
       <section className="card">
         <h2>Fix</h2>
+        {run.build_status === "failed" && (
+          <div className="banner banner-error">
+            ❌ Build failed — the fix does not compile. The branch was discarded.
+          </div>
+        )}
         <div className="banner banner-error">{state.error || "The fix could not be generated."}</div>
+        {run.build_output && (
+          <details className="disclosure">
+            <summary>Build output</summary>
+            <pre className="code-block">{run.build_output}</pre>
+          </details>
+        )}
       </section>
     );
   }
@@ -253,10 +287,27 @@ function FixSection({ state }) {
     prDescription = `# ${pr.pr_title || ""}\n\n${pr.pr_description || ""}`;
   }
   const testing = fix.testing_suggestions || run.testing_suggestions;
+  const buildStatus = run.build_status;
 
   return (
     <section className="card">
       <h2>Fix</h2>
+
+      {buildStatus === "passed" && (
+        <div className="banner banner-success">
+          ✅ Build successful — the fix compiles cleanly.
+        </div>
+      )}
+      {buildStatus === "skipped" && (
+        <div className="banner banner-warn">Build verification skipped: {run.build_output}</div>
+      )}
+      {run.build_output && (
+        <details className="disclosure">
+          <summary>Build output</summary>
+          <pre className="code-block">{run.build_output}</pre>
+        </details>
+      )}
+
       {state.branch && (
         <div className="banner banner-success">
           Changes committed to branch <code>{state.branch}</code>
@@ -299,11 +350,28 @@ function FixSection({ state }) {
         </dl>
       )}
 
-      {state.branch && (
-        <p className="caption">
-          Push it yourself when you are happy:{" "}
-          <code>git push -u origin {state.branch}</code>
-        </p>
+      {run.pr_url ? (
+        <div className="banner banner-success">
+          Pull request opened:{" "}
+          <a href={run.pr_url} target="_blank" rel="noreferrer">
+            {run.pr_url}
+          </a>
+        </div>
+      ) : (
+        state.status === "applied" && (
+          <>
+            <div className="button-row">
+              <button className="btn btn-primary" onClick={onCreatePr} disabled={busy === "createPr"}>
+                {busy === "createPr" ? "Opening pull request…" : "Generate pull request on Bitbucket"}
+              </button>
+            </div>
+            {state.branch && (
+              <p className="caption">
+                Or push it yourself: <code>git push -u origin {state.branch}</code>
+              </p>
+            )}
+          </>
+        )
       )}
     </section>
   );

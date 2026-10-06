@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
 import DiffBlock from "../components/DiffBlock";
 import ErrorBanner from "../components/ErrorBanner";
 import Stepper from "../components/Stepper";
+import { useStatus } from "../status";
 
 const ACTIVE = new Set(["queued", "running"]);
 const STATUS_LABEL = {
@@ -21,6 +22,8 @@ export default function BatchPage() {
   const [scm, setScm] = useState(null);
   const [error, setError] = useState(null);
   const [publishing, setPublishing] = useState(false);
+  const { start, update, finish } = useStatus();
+  const statusIdRef = useRef(null);
 
   useEffect(() => {
     let timer;
@@ -30,8 +33,22 @@ export default function BatchPage() {
         const data = await api.getBatch(batchId);
         if (cancelled) return;
         setBatch(data);
-        if (ACTIVE.has(data.status)) timer = setTimeout(load, 2000);
-        else api.scmStatus(data.project_key).then(setScm).catch(() => {});
+        if (ACTIVE.has(data.status)) {
+          const step = (data.steps || []).find((s) => s.status === "running");
+          const detail = step ? (step.kind === "mechanical" ? "Applying mechanical recipes…" : `AI session: ${step.title || step.rule}`) : "Preparing branch…";
+          if (statusIdRef.current == null) {
+            statusIdRef.current = start(`Running batch #${batchId}`, detail);
+          } else {
+            update(statusIdRef.current, detail);
+          }
+          timer = setTimeout(load, 2000);
+        } else {
+          if (statusIdRef.current != null) {
+            finish(statusIdRef.current);
+            statusIdRef.current = null;
+          }
+          api.scmStatus(data.project_key).then(setScm).catch(() => {});
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof ApiError ? err.message : String(err));
       }
@@ -40,7 +57,12 @@ export default function BatchPage() {
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      if (statusIdRef.current != null) {
+        finish(statusIdRef.current);
+        statusIdRef.current = null;
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batchId]);
 
   const publish = async () => {

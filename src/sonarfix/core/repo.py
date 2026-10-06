@@ -7,11 +7,49 @@ in the UI.
 
 from __future__ import annotations
 
+import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
 _SLUG_RE = re.compile(r"[^a-zA-Z0-9._-]+")
+
+# Per-user and machine-wide Git for Windows installs that often miss PATH.
+_GIT_FALLBACKS = (
+    Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Git" / "cmd",
+    Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Git" / "cmd",
+    Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Git" / "cmd",
+)
+
+
+def branch_prefix() -> str:
+    """`sonarfix-<user>`, so a branch shows who ran the tool.
+
+    SONARFIX_USER wins, then BITBUCKET_USERNAME, then the OS login.
+    """
+    user = (
+        os.environ.get("SONARFIX_USER")
+        or os.environ.get("BITBUCKET_USERNAME")
+        or os.environ.get("USERNAME")
+        or os.environ.get("USER")
+        or ""
+    )
+    user = _SLUG_RE.sub("-", user.strip()).strip("-.").lower()
+    return f"sonarfix-{user}" if user else "sonarfix"
+
+
+def ensure_git_on_path() -> None:
+    """Put git on PATH for this process (and its children) if it is installed."""
+    if shutil.which("git"):
+        return
+    for folder in _GIT_FALLBACKS:
+        if (folder / "git.exe").is_file():
+            os.environ["PATH"] = f"{folder}{os.pathsep}{os.environ.get('PATH', '')}"
+            return
+
+
+ensure_git_on_path()
 
 
 class RepoError(RuntimeError):

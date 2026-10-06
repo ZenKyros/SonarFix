@@ -79,6 +79,9 @@ class Settings:
     bitbucket_url: str = ""
     # Upper bound on occurrences sent to one AI session, to cap token spend.
     max_ai_occurrences: int = 20
+    # Build verification: does the fix compile before it is offered as a PR.
+    build_enabled: bool = True
+    build_timeout: int = 300
 
     def require_sonar(self) -> None:
         missing = [
@@ -136,6 +139,13 @@ def _int_env(name: str, default: int) -> int:
         return default
 
 
+def _bool_env(name: str, default: bool) -> bool:
+    raw = os.environ.get(name, "").strip().lower()
+    if not raw:
+        return default
+    return raw in ("1", "true", "yes", "on")
+
+
 def _choice_env(name: str, default: str, allowed: tuple[str, ...]) -> str:
     value = (os.environ.get(name) or default).strip().lower()
     if value not in allowed:
@@ -164,6 +174,9 @@ def _sonar_mcp_settings(sonar_url: str, sonar_token: str, sonar_org: str) -> Son
     env = {"SONARQUBE_URL": sonar_url, "SONARQUBE_TOKEN": sonar_token}
     if sonar_org:
         env["SONARQUBE_ORG"] = sonar_org
+    # The official SonarSource JAR needs somewhere to cache its local index.
+    storage_path = (os.environ.get("SONARFIX_SONAR_MCP_STORAGE_PATH") or "").strip()
+    env["STORAGE_PATH"] = storage_path or str(PROJECT_ROOT / ".sonarfix" / "mcp-storage")
     settings = SonarMcpSettings(
         mode=mode,
         command=(os.environ.get("SONARFIX_SONAR_MCP_COMMAND") or "").strip(),
@@ -218,4 +231,6 @@ def get_settings() -> Settings:
         bitbucket_username=os.environ.get("BITBUCKET_USERNAME", "").strip(),
         bitbucket_url=os.environ.get("BITBUCKET_URL", "").strip().rstrip("/"),
         max_ai_occurrences=_int_env("SONARFIX_MAX_AI_OCCURRENCES", 20),
+        build_enabled=_bool_env("SONARFIX_BUILD_ENABLED", True),
+        build_timeout=_int_env("SONARFIX_BUILD_TIMEOUT", 300),
     )

@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api";
 import ErrorBanner from "../components/ErrorBanner";
+import { useStatus } from "../status";
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
+  const { track } = useStatus();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,6 +15,11 @@ export default function ProjectsPage() {
   const [cloneUrl, setCloneUrl] = useState("");
   const [cloneBranch, setCloneBranch] = useState("");
   const [busy, setBusy] = useState(null); // which action is in flight
+  const [query, setQuery] = useState("");
+  const [onboardSonarUrl, setOnboardSonarUrl] = useState("");
+  const [onboardRepoUrl, setOnboardRepoUrl] = useState("");
+  const [onboardBranch, setOnboardBranch] = useState("");
+  const [onboardRepoPath, setOnboardRepoPath] = useState("");
 
   const load = async () => {
     try {
@@ -34,15 +41,27 @@ export default function ProjectsPage() {
 
   const selected = projects.find((p) => p.key === selectedKey) || null;
 
+  const filteredProjects = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? projects.filter(
+          (p) => p.name.toLowerCase().includes(q) || p.key.toLowerCase().includes(q)
+        )
+      : projects;
+    // Projects with a repo already configured are the ones you can act on -
+    // surface those first instead of making you scroll a 50-item list.
+    return [...list].sort((a, b) => Boolean(b.repo_path) - Boolean(a.repo_path));
+  }, [projects, query]);
+
   useEffect(() => {
     setRepoPathDraft(selected?.repo_path || "");
   }, [selectedKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const run = async (label, fn) => {
+  const run = async (busyKey, statusLabel, fn) => {
     setError(null);
-    setBusy(label);
+    setBusy(busyKey);
     try {
-      await fn();
+      await track(statusLabel, fn);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));
     } finally {
@@ -50,33 +69,51 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleSync = () => run("sync", async () => {
+  const handleSync = () => run("sync", "Syncing projects from SonarQube…", async () => {
     const data = await api.syncProjects();
     setProjects(data);
   });
 
-  const handleAutoClone = () => run("clone", async () => {
+  const handleAutoClone = () => run("clone", `Discovering repo for ${selected.name}…`, async () => {
     await api.autoClone(selected.key);
     await load();
   });
 
-  const handleSaveRepo = () => run("save", async () => {
+  const handleSaveRepo = () => run("save", `Saving repo path for ${selected.name}…`, async () => {
     await api.setRepoPath(selected.key, repoPathDraft.trim());
     await load();
   });
 
-  const handleClone = () => run("clone-url", async () => {
+  const handleClone = () => run("clone-url", `Cloning ${cloneUrl.trim()}…`, async () => {
     await api.cloneRepo(selected.key, cloneUrl.trim(), cloneBranch.trim());
     setCloneUrl("");
     await load();
   });
 
-  const handleFetchIssues = () => run("fetch", async () => {
+  const handleFetchIssues = () => run("fetch", `Fetching issues for ${selected.name}…`, async () => {
     await api.syncIssues(selected.key);
     await load();
   });
 
   const openPlan = () => navigate(`/projects/${selected.key}/plan`);
+
+  const handleOnboard = () =>
+    run("onboard", "Fetching the project and its issues…", async () => {
+      const result = await api.onboard(
+        onboardSonarUrl.trim(),
+        onboardRepoUrl.trim(),
+        onboardBranch.trim(),
+        onboardRepoPath.trim()
+      );
+      setOnboardSonarUrl("");
+      setOnboardRepoUrl("");
+      setOnboardBranch("");
+      setOnboardRepoPath("");
+      await load();
+      navigate(`/projects/${result.project.key}/issues`, {
+        state: { projectName: result.project.name },
+      });
+    });
 
   return (
     <div className="page">
@@ -90,8 +127,70 @@ export default function ProjectsPage() {
 
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
+      <section className="panel onboard-panel">
+        <h2>Start a new project</h2>
+        <p className="caption">
+          Paste the SonarQube project link and the repository to fix it in, and
+          every matching issue will be fetched and listed below.
+        </p>
+        <div className="onboard-grid">
+          <div>
+            <label className="field-label">SonarQube project</label>
+            <input
+              className="text-input"
+              placeholder="https://your-sonar-host/code?id=PROJECT_KEY"
+              value={onboardSonarUrl}
+              onChange={(e) => setOnboardSonarUrl(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="field-label">Repository</label>
+            <input
+              className="text-input"
+              placeholder="Bitbucket repo or project page URL"
+              value={onboardRepoUrl}
+              onChange={(e) => setOnboardRepoUrl(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="field-label">Branch (optional)</label>
+            <input
+              className="text-input"
+              placeholder="defaults to the repo's default branch"
+              value={onboardBranch}
+              onChange={(e) => setOnboardBranch(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="field-label">Local folder (optional)</label>
+            <input
+              className="text-input"
+              placeholder={String.raw`C:\work\my-service (blank = pick one for you)`}
+              value={onboardRepoPath}
+              onChange={(e) => setOnboardRepoPath(e.target.value)}
+            />
+          </div>
+        </div>
+        <p className="caption">
+          Already have it cloned? Point the local folder at that clone and
+          nothing will be re-downloaded.
+        </p>
+        <div className="button-row">
+          <button
+            className="btn btn-primary"
+            onClick={handleOnboard}
+            disabled={!onboardSonarUrl.trim() || !onboardRepoUrl.trim() || busy === "onboard"}
+          >
+            {busy === "onboard" ? "Fetching issues…" : "Fetch issues"}
+          </button>
+        </div>
+      </section>
+
       <div className="toolbar">
-        <button className="btn btn-primary" onClick={handleSync} disabled={busy === "sync"}>
+        <p className="caption" style={{ margin: 0 }}>
+          Or browse projects already seen on this SonarQube server:
+        </p>
+        <button className="btn btn-outline" onClick={handleSync} disabled={busy === "sync"}>
           {busy === "sync" ? "Syncing…" : "Sync projects from SonarQube"}
         </button>
       </div>
@@ -102,8 +201,21 @@ export default function ProjectsPage() {
         <div className="empty">No projects yet. Sync from SonarQube to get started.</div>
       ) : (
         <div className="split">
+          <div className="project-list-col">
+            <input
+              className="text-input"
+              placeholder={`Search ${projects.length} projects…`}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <p className="caption project-list-hint">
+              <span className="dot dot-ok" /> repo configured — ready to fetch issues
+            </p>
+            {filteredProjects.length === 0 ? (
+              <div className="empty">No project matches "{query}".</div>
+            ) : (
           <ul className="project-list">
-            {projects.map((p) => (
+            {filteredProjects.map((p) => (
               <li key={p.key}>
                 <button
                   className={`project-row ${p.key === selectedKey ? "active" : ""}`}
@@ -120,6 +232,8 @@ export default function ProjectsPage() {
               </li>
             ))}
           </ul>
+            )}
+          </div>
 
           {selected && (
             <div className="panel">

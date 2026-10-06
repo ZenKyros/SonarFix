@@ -64,6 +64,19 @@ class RepoPathBody(BaseModel):
 class CloneBody(BaseModel):
     url: str = Field(description="HTTPS or SSH clone URL, e.g. a Bitbucket repository.")
     branch: str | None = Field(default=None, description="Branch Sonar analysed.")
+    dest_path: str | None = Field(
+        default=None, description="Local folder to clone into; defaults to data/repos/<project>."
+    )
+
+
+class OnboardBody(BaseModel):
+    sonar_url: str = Field(description="SonarQube project dashboard URL, or a bare project key.")
+    repo_url: str = Field(description="Repository clone URL, e.g. a Bitbucket Server repo.")
+    branch: str | None = Field(default=None, description="Branch Sonar analysed, if not the default.")
+    repo_path: str | None = Field(
+        default=None,
+        description="Local folder to use: bound as-is if it's already a clone, else cloned into.",
+    )
 
 
 class BatchBody(BaseModel):
@@ -104,6 +117,12 @@ def get_projects() -> list[dict[str, Any]]:
 def post_projects_sync() -> list[dict[str, Any]]:
     """Step 1: refresh the project list from SonarQube."""
     return _guard(service.sync_projects)
+
+
+@app.post("/onboard")
+def post_onboard(body: OnboardBody) -> dict[str, Any]:
+    """Paste a SonarQube project link and a repo link, get its issues back."""
+    return _guard(service.onboard_project, body.sonar_url, body.repo_url, body.branch, body.repo_path)
 
 
 @app.put("/projects/{project_key}/repo")
@@ -179,13 +198,19 @@ def post_reject(issue_id: str, body: DecisionBody | None = None) -> dict[str, An
     return _guard(service.decide, issue_id, False, feedback)
 
 
+@app.post("/issues/{issue_id}/pull-request")
+def post_issue_pull_request(issue_id: str) -> dict[str, Any]:
+    """Push the fix branch and open a Bitbucket pull request for one issue."""
+    return _guard(service.create_pull_request, issue_id)
+
+
 # --- remediation plan and batches ---------------------------------------------
 
 
 @app.post("/projects/{project_key}/clone")
 def post_clone(project_key: str, body: CloneBody) -> dict[str, Any]:
     """Clone a repository (Bitbucket token used if set) and attach it to the project."""
-    return _guard(service.clone_repo, project_key, body.url, body.branch)
+    return _guard(service.clone_repo, project_key, body.url, body.branch, body.dest_path)
 
 
 @app.get("/projects/{project_key}/plan")

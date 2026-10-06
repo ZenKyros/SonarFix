@@ -16,7 +16,8 @@ from . import engine, scm, sonar, store
 from .config import get_settings
 from .planner import Group, Occurrence, SourceFile, build_groups, classify
 from .recipes import target_from
-from .repo import RepoWorkspace
+from .repo import RepoWorkspace, branch_prefix
+from .repo_profile import profile_for
 
 
 class BatchError(RuntimeError):
@@ -131,6 +132,10 @@ def _ai_task(group: Group, rule: dict[str, str], notes: str, limit: int) -> str:
     description = (rule.get("description") or "").strip()
     if description:
         parts += ["", "## What the rule says", description[:3000]]
+    profiles = dict.fromkeys(profile_for(o.issue["file_path"]) for o in primary)
+    profiles.pop("", None)
+    if profiles:
+        parts += ["", "## The projects involved", *profiles]
     parts += ["", f"## Occurrences ({len(primary)})"]
     for occ in primary:
         parts += [
@@ -173,7 +178,7 @@ def run(batch_id: int) -> None:
         ai_groups = [groups[g] for g in selection.get("ai", []) if g in groups]
 
         base = workspace.current_branch()
-        branch = workspace.start_branch(f"sonarfix/batch-{batch_id}")
+        branch = workspace.start_branch(f"{branch_prefix()}/batch-{batch_id}")
         store.update_batch(batch_id, base_branch=base, branch=branch)
 
         if mech_groups:
@@ -354,7 +359,7 @@ def fix_single(issue_id: str, notes: str = "") -> dict[str, Any]:
         project_key, {"mechanical": [], "ai": [], "notes": notes, "singleIssue": issue_id}
     )
     base = workspace.current_branch()
-    branch = workspace.start_branch(f"sonarfix/issue-{issue_id[:12].lower()}")
+    branch = workspace.start_branch(f"{branch_prefix()}/issue-{issue_id[:12].lower()}")
     store.update_batch(batch_id, status="running", base_branch=base, branch=branch)
 
     steps: list[dict[str, Any]] = []

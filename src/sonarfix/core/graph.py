@@ -19,9 +19,10 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
-from . import engine, sonar, store
+from . import build, engine, sonar, store
 from .config import get_settings
-from .repo import RepoWorkspace, slugify
+from .repo import RepoWorkspace, branch_prefix, slugify
+from .repo_profile import profile_for
 
 class FixState(TypedDict, total=False):
     # inputs
@@ -46,6 +47,8 @@ class FixState(TypedDict, total=False):
     fix: dict[str, Any]
     diff: str
     changed_files: list[str]
+    # build verification
+    build: dict[str, Any]
     # output
     pr: dict[str, str]
     commit_sha: str
@@ -104,12 +107,18 @@ def _rule_block(state: FixState) -> str:
     return f"\n## What the rule says\n\n{description[:4000]}\n"
 
 
+def _project_block(file_path: str) -> str:
+    profile = profile_for(file_path)
+    return f"\n## The project this file belongs to\n\n{profile}\n" if profile else ""
+
+
 def _analysis_task(state: FixState) -> str:
     context = state.get("code_context") or {}
     return "\n".join(
         [
             _issue_header(state),
             _rule_block(state),
+            _project_block(state["file_path"]),
             "## Code at the reported location",
             f"Lines {context.get('start_line')}-{context.get('end_line')} of "
             f"/{state['file_path']} ({context.get('total_lines')} lines total):",
@@ -133,7 +142,7 @@ def _fix_task(state: FixState) -> str:
 
     parts = [
         _issue_header(state),
-        "",
+        _project_block(state["file_path"]),
         "## Approved remediation plan",
         numbered or "(no steps recorded - implement the minimal correct fix)",
         "",
@@ -282,7 +291,7 @@ def apply_fix(state: FixState) -> dict[str, Any]:
         }
 
     rule_slug = slugify((state["issue"].get("rule") or "issue").replace(":", "-"))
-    branch = workspace.start_branch(f"sonarfix/{rule_slug}-{state['issue_id'][:8]}")
+    branch = workspace.start_branch(f"{branch_prefix()}/{rule_slug}-{state['issue_id'][:8]}")
 
     try:
         fix = engine.run_fix(state["repo_path"], _fix_task(state))
@@ -324,18 +333,42 @@ def apply_fix(state: FixState) -> dict[str, Any]:
     }
 
 
+def verify_build(state: FixState) -> dict[str, Any]:
+    """Build the blast radius of the fix before it is ever offered as a PR."""
+    if state.get("status") != "fix_generated":
+        return {}  # apply_fix already failed - nothing staged to build
+
+    result = build.verify(state["repo_path"], state.get("changed_files") or [])
+    if not result["success"]:
+        workspace = RepoWorkspace(state["repo_path"])
+        workspace.abandon(state["base_branch"], state.get("branch"))
+        return {
+            "build": result,
+            "status": "failed",
+            "error": (
+                "Build verification failed - the fix does not compile:\n\n"
+                + result["output"][-4000:]
+            ),
+        }
+    return {"build": result, "status": "build_passed"}
+
+
 def finalize(state: FixState) -> dict[str, Any]:
     plan_id = int(state["plan_id"])
+    build_result = state.get("build") or {}
 
     if state.get("status") == "failed":
         run_id = store.create_run(
             plan_id,
             {
                 "branch": state.get("branch"),
+                "base_branch": state.get("base_branch"),
                 "diff": state.get("diff"),
                 "changes_summary": (state.get("fix") or {}).get("changes_summary"),
                 "status": "failed",
                 "error": state.get("error"),
+                "build_status": build_result.get("status"),
+                "build_output": build_result.get("output"),
             },
         )
         return {"run_id": run_id}
@@ -350,11 +383,15 @@ def finalize(state: FixState) -> dict[str, Any]:
         plan_id,
         {
             "branch": state.get("branch"),
+            "base_branch": state.get("base_branch"),
             "diff": state.get("diff"),
             "changes_summary": fix.get("changes_summary"),
             "commit_message": pr["commit_message"],
+            "pr_title": pr["pr_title"],
             "pr_description": f"# {pr['pr_title']}\n\n{pr['pr_description']}",
             "testing_suggestions": fix.get("testing_suggestions"),
+            "build_status": build_result.get("status"),
+            "build_output": build_result.get("output"),
             "status": "applied",
         },
     )
@@ -371,13 +408,15 @@ def build_graph() -> Any:
     builder.add_node("analyze", analyze)
     builder.add_node("await_approval", await_approval)
     builder.add_node("apply_fix", apply_fix)
+    builder.add_node("verify_build", verify_build)
     builder.add_node("finalize", finalize)
 
     builder.add_edge(START, "load_context")
     builder.add_edge("load_context", "analyze")
     builder.add_edge("analyze", "await_approval")
     builder.add_conditional_edges("await_approval", route_approval)
-    builder.add_edge("apply_fix", "finalize")
+    builder.add_edge("apply_fix", "verify_build")
+    builder.add_edge("verify_build", "finalize")
     builder.add_edge("finalize", END)
 
     return builder.compile(checkpointer=get_checkpointer())

@@ -18,6 +18,31 @@ class ServiceError(RuntimeError):
     """Something the user can fix: bad config, missing repo, unknown issue."""
 
 
+# A handful of repos (e.g. inf-src) are scanned in Sonar as several separate
+# project keys that share one git repo and one branch. We present each such
+# group as a single "composite" project so the one-repo-per-project fix/PR
+# flow still applies; its issues are the union of the real Sonar projects.
+COMPOSITE_PROJECTS: dict[str, dict[str, Any]] = {
+    "INF-SRC:11.10-Support": {
+        "name": "INF-SRC (11.10-Support)",
+        "branch": "11.10-Support-infsrc",
+        # inf-src is a monorepo: each Sonar sub-project lives in a folder
+        # named after the part of its key after this prefix, e.g.
+        # 'com.unisys.InfoImage:INF-SRC.DataInterfaceService' -> 'DataInterfaceService/'.
+        "subfolder_prefix": "com.unisys.InfoImage:INF-SRC.",
+        "component_keys": (
+            "com.unisys.InfoImage:INF-SRC.IIFContentDownloader",
+            "com.unisys.InfoImage:INF-SRC.ImageQualityAppService",
+            "com.unisys.InfoImage:INF-SRC.IIFAzureADGateWay",
+            "com.unisys.InfoImage:INF-SRC.IIFContentIngestionService",
+            "com.unisys.InfoImage:INF-SRC.IIFMessageEncryption",
+            "com.unisys.InfoImage:INF-SRC.IIFBulkDelete",
+            "com.unisys.InfoImage:INF-SRC.DataInterfaceService",
+        ),
+    },
+}
+
+
 def _git(*args: str, cwd: str | Path | None = None) -> str:
     """Run a git command and return stdout, raise on non-zero."""
     result = subprocess.run(
@@ -34,6 +59,9 @@ def _git(*args: str, cwd: str | Path | None = None) -> str:
 def sync_projects() -> list[dict[str, Any]]:
     """Pull the project list from Sonar into SQLite and return what we now hold."""
     store.upsert_projects(sonar.list_projects())
+    store.upsert_projects(
+        [{"key": key, "name": cfg["name"]} for key, cfg in COMPOSITE_PROJECTS.items()]
+    )
     return store.list_projects()
 
 
@@ -57,7 +85,23 @@ def set_repo_path(project_key: str, repo_path: str) -> dict[str, Any]:
 def sync_issues(project_key: str) -> dict[str, Any]:
     if not store.get_project(project_key):
         raise ServiceError(f"Unknown project: {project_key}. Sync projects first.")
-    issues = sonar.list_issues(project_key)
+    composite = COMPOSITE_PROJECTS.get(project_key)
+    if composite:
+        issues = sonar.list_issues(
+            ",".join(composite["component_keys"]), branch=composite["branch"]
+        )
+        prefix = composite.get("subfolder_prefix")
+        if prefix:
+            for issue in issues:
+                sub_project = issue.get("project") or ""
+                if sub_project.startswith(prefix):
+                    subfolder = sub_project[len(prefix) :]
+                    rest = store.strip_component_prefix(
+                        issue.get("component") or "", sub_project
+                    )
+                    issue["component"] = f"{sub_project}:{subfolder}/{rest}"
+    else:
+        issues = sonar.list_issues(project_key)
     count = store.replace_issues(project_key, issues)
     store.mark_synced(project_key)
     return {"project_key": project_key, "issues_synced": count}
@@ -209,10 +253,15 @@ def decide(issue_id: str, approved: bool, feedback: str | None = None) -> dict[s
             "Run the analysis first."
         )
 
-    result = graph.invoke(
-        Command(resume={"approved": approved, "feedback": feedback or ""}),
-        config=config,
-    )
+    if approved and "apply_fix" in snapshot.next:
+        # A previous attempt was approved but crashed while applying the fix
+        # (e.g. git missing). Continue from that node instead of re-asking.
+        result = graph.invoke(None, config=config)
+    else:
+        result = graph.invoke(
+            Command(resume={"approved": approved, "feedback": feedback or ""}),
+            config=config,
+        )
 
     plan = _plan_payload(issue_id)
     return {
@@ -249,14 +298,127 @@ def workflow_state(issue_id: str) -> dict[str, Any]:
     }
 
 
-def clone_repo(project_key: str, url: str, branch: str | None = None) -> dict[str, Any]:
-    """Clone `url` under data/repos/<project> and make it the project's repo."""
+def onboard_project(
+    sonar_url: str, repo_url: str, branch: str | None = None, repo_path: str | None = None
+) -> dict[str, Any]:
+    """Paste a SonarQube project URL (or key) and a repo URL, get its issues back.
+
+    The one entry point the UI needs for "I have a new project" - no separate
+    sync/clone/fetch steps. Safe to call again with the same inputs: it reuses
+    whatever is already bound instead of re-cloning or erroring.
+
+    `repo_path`, when given, is the exact local folder to use: if it is
+    already a git clone, it is bound as-is (nothing is cloned); otherwise the
+    repo is cloned into that folder. Without it, an existing binding is
+    reused, or a fresh clone lands under data/repos/<project>.
+    """
+    if sonar.is_portfolio_or_application(sonar_url):
+        raise ServiceError(
+            f"{sonar_url} is a Portfolio/Application page, not a Project. Those "
+            "aggregate issues across many unrelated repositories, so they never "
+            "line up with the one repo you're fixing. Open the actual Project in "
+            "SonarQube (its page title says 'Project', and the URL looks like "
+            "/dashboard?id=... or /code?id=...) and paste that link instead."
+        )
+    key = sonar.parse_project_key(sonar_url)
+    if not sonar.server_matches(sonar_url):
+        raise ServiceError(
+            f"{sonar_url} is not on the configured SonarQube server "
+            f"({get_settings().sonar_url}). Point SONAR_URL/SONAR_TOKEN at that "
+            "server first (see .env)."
+        )
+
+    if not store.get_project(key):
+        name = key
+        try:
+            name = next((p["name"] for p in sonar.list_projects() if p["key"] == key), key)
+        except Exception:  # noqa: BLE001 - a nice-to-have, never blocks onboarding
+            pass
+        store.upsert_projects([{"key": key, "name": name}])
+
+    project = store.get_project(key) or {}
+    chosen = (repo_path or "").strip()
+    bound_path = chosen or project.get("repo_path")
+    path = Path(bound_path) if bound_path else None
+
+    if path and (path / ".git").exists():
+        set_repo_path(key, str(path.resolve()))
+    elif path and path.is_dir() and any(path.iterdir()):
+        raise ServiceError(
+            f"{bound_path} exists, is not empty, and is not a git repository. "
+            "Point the local folder at an empty or non-existent path to clone into."
+        )
+    else:
+        # Doesn't exist yet, or exists and is empty - either is fine to clone into.
+        clone_repo(key, repo_url, branch, dest_path=chosen or None)
+
+    synced = sync_issues(key)
+    return {
+        "project": store.get_project(key),
+        "issues_synced": synced["issues_synced"],
+        "issues": list_issues(key),
+    }
+
+
+def create_pull_request(issue_id: str) -> dict[str, Any]:
+    """Push the committed fix branch for one issue and open a Bitbucket PR.
+
+    Only reachable once the fix has been applied AND the local build passed -
+    `decide()` never marks a run 'applied' when `verify_build` failed.
+    """
+    from . import scm
+
+    issue = store.get_issue(issue_id)
+    if not issue:
+        raise ServiceError(f"Unknown issue: {issue_id}")
+    plan = store.latest_plan(issue_id)
+    if not plan:
+        raise ServiceError("Analyze and approve a fix before opening a pull request.")
+    run = store.latest_run(int(plan["id"]))
+    if not run or run.get("status") != "applied" or not run.get("branch"):
+        raise ServiceError("No applied fix is ready to publish for this issue.")
+    if run.get("pr_url"):
+        return run
+
+    project = store.get_project(issue["project_key"]) or {}
+    repo_path = project.get("repo_path")
+    readiness = scm.status(repo_path)
+    if not readiness["ready"]:
+        raise ServiceError(str(readiness["reason"]))
+
+    base_branch = run.get("base_branch") or "main"
+    scm.push(repo_path, run["branch"])
+    url = scm.open_pull_request(
+        repo_path,
+        run["branch"],
+        base_branch,
+        run.get("pr_title") or issue.get("message") or f"SonarFix: {issue_id}",
+        run.get("pr_description") or "",
+    )
+    store.set_run_pr_url(int(run["id"]), url)
+    return store.get_run(int(run["id"])) or run
+
+
+def clone_repo(
+    project_key: str, url: str, branch: str | None = None, dest_path: str | None = None
+) -> dict[str, Any]:
+    """Clone `url` and make it the project's repo.
+
+    `dest_path` lets the caller pick exactly where it lands; without it, the
+    clone goes under data/repos/<project>. `url` may be a clone URL or a
+    browser page copied from Bitbucket - either normalizes the same way.
+    """
     from . import scm
     from .repo import slugify
 
     if not store.get_project(project_key):
         raise ServiceError(f"Unknown project: {project_key}")
-    dest = get_settings().db_path.parent / "repos" / slugify(project_key, limit=80)
+    url = scm.normalize_clone_url(url)
+    dest = (
+        Path(dest_path).expanduser().resolve()
+        if dest_path
+        else get_settings().db_path.parent / "repos" / slugify(project_key, limit=80)
+    )
     if get_settings().bitbucket_token:
         scm.clone(url, dest, branch)
     else:

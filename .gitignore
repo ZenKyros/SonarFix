@@ -12,3 +12,8 @@ wheels/
 # SonarFix
 .env
 data/*.db
+data/*.db-shm
+data/*.db-wal
+data/repos/
+.sonarfix/
+demo/

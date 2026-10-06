@@ -55,11 +55,16 @@ CREATE TABLE IF NOT EXISTS fix_runs (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     plan_id             INTEGER NOT NULL REFERENCES fix_plans(id),
     branch              TEXT,
+    base_branch         TEXT,
     diff                TEXT,
     changes_summary     TEXT,
     commit_message      TEXT,
+    pr_title            TEXT,
     pr_description      TEXT,
+    pr_url              TEXT,
     testing_suggestions TEXT,
+    build_status        TEXT,
+    build_output        TEXT,
     status              TEXT,
     error               TEXT,
     created_at          TEXT
@@ -110,20 +115,40 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
+_FIX_RUNS_MIGRATIONS = (
+    "ALTER TABLE fix_runs ADD COLUMN base_branch TEXT",
+    "ALTER TABLE fix_runs ADD COLUMN pr_title TEXT",
+    "ALTER TABLE fix_runs ADD COLUMN pr_url TEXT",
+    "ALTER TABLE fix_runs ADD COLUMN build_status TEXT",
+    "ALTER TABLE fix_runs ADD COLUMN build_output TEXT",
+)
+
+
 def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
+        for statement in _FIX_RUNS_MIGRATIONS:
+            try:
+                conn.execute(statement)
+            except sqlite3.OperationalError:
+                pass  # column already exists - a fresh CREATE TABLE already has it
 
 
 def _rows(cursor: sqlite3.Cursor) -> list[dict[str, Any]]:
     return [dict(row) for row in cursor.fetchall()]
 
 
-def strip_component_prefix(component: str) -> str:
+def strip_component_prefix(component: str, project_key: str = "") -> str:
     """Turn a Sonar component key into a repo-relative path.
 
     'my-project:src/main/java/Foo.java' -> 'src/main/java/Foo.java'
+
+    Some Sonar project keys (e.g. 'com.unisys.InfoImage:Devops-110-SRC')
+    contain a colon themselves, so the real project key - not just the first
+    colon - must be stripped, or the leftover fragment still has one in it.
     """
+    if project_key and component.startswith(project_key + ":"):
+        return component[len(project_key) + 1 :]
     return component.split(":", 1)[1] if ":" in component else component
 
 
@@ -179,7 +204,9 @@ def replace_issues(project_key: str, issues: list[dict[str, Any]]) -> int:
             "status": issue.get("status"),
             "message": issue.get("message"),
             "component": issue.get("component"),
-            "file_path": strip_component_prefix(issue.get("component") or ""),
+            "file_path": strip_component_prefix(
+                issue.get("component") or "", issue.get("project") or ""
+            ),
             "line": issue.get("line"),
             "raw_json": json.dumps(issue),
             "fetched_at": stamp,
@@ -332,23 +359,33 @@ def create_run(plan_id: int, fields: dict[str, Any]) -> int:
     with connect() as conn:
         cursor = conn.execute(
             "INSERT INTO fix_runs "
-            "(plan_id, branch, diff, changes_summary, commit_message, "
-            " pr_description, testing_suggestions, status, error, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(plan_id, branch, base_branch, diff, changes_summary, commit_message, "
+            " pr_title, pr_description, testing_suggestions, build_status, "
+            " build_output, status, error, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 plan_id,
                 fields.get("branch"),
+                fields.get("base_branch"),
                 fields.get("diff"),
                 fields.get("changes_summary"),
                 fields.get("commit_message"),
+                fields.get("pr_title"),
                 fields.get("pr_description"),
                 fields.get("testing_suggestions"),
+                fields.get("build_status"),
+                fields.get("build_output"),
                 fields.get("status", "generated"),
                 fields.get("error"),
                 now(),
             ),
         )
         return int(cursor.lastrowid)
+
+
+def set_run_pr_url(run_id: int, url: str) -> None:
+    with connect() as conn:
+        conn.execute("UPDATE fix_runs SET pr_url = ? WHERE id = ?", (url, run_id))
 
 
 def get_run(run_id: int) -> dict[str, Any] | None:

@@ -45,6 +45,44 @@ class BitbucketRepo:
 _SCP_RE = re.compile(r"^(?:[\w.-]+@)?([\w.-]+):(.+)$")
 
 
+def normalize_clone_url(url: str) -> str:
+    """Turn a URL copied from a browser into one `git clone` can actually use.
+
+    People paste the page they were looking at, not the clone URL: a
+    Bitbucket Server project page (`.../projects/KEY/repos/slug/browse`) or a
+    Bitbucket Cloud repo page (`bitbucket.org/workspace/repo/src/...`). Both
+    render fine in a browser but are not git transport endpoints, so `git
+    clone` against them fails as an auth error, not a 404 - confusing. An
+    already-valid clone URL (scp-like, `/scm/...`, or ending in `.git`) is
+    returned unchanged.
+    """
+    raw = url.strip()
+    if not raw or "://" not in raw:
+        return raw  # empty, or scp-like (git@host:owner/repo.git)
+
+    parsed = urlparse(raw)
+    parts = [p for p in parsed.path.strip("/").split("/") if p]
+    lowered = [p.lower() for p in parts]
+
+    if raw.rstrip("/").endswith(".git") or "scm" in lowered:
+        return raw
+
+    # Bitbucket Server/DC project page: .../projects/KEY/repos/slug[/browse|/commits|...]
+    if "projects" in lowered and "repos" in lowered:
+        pi, ri = lowered.index("projects"), lowered.index("repos")
+        if pi + 1 < len(parts) and ri + 1 < len(parts):
+            project_key, slug = parts[pi + 1], parts[ri + 1]
+            context = "/".join(parts[:pi])
+            prefix = f"/{context}" if context else ""
+            return f"{parsed.scheme}://{parsed.netloc}{prefix}/scm/{project_key}/{slug}.git"
+
+    # Bitbucket Cloud repo page: bitbucket.org/workspace/repo[/src/...]
+    if parsed.hostname == "bitbucket.org" and len(parts) >= 2:
+        return f"{parsed.scheme}://{parsed.netloc}/{parts[0]}/{parts[1]}.git"
+
+    return raw
+
+
 def parse_remote(url: str) -> BitbucketRepo | None:
     """Recognise a Bitbucket clone URL; None for GitHub, GitLab, etc."""
     url = url.strip()
@@ -110,6 +148,9 @@ def _git_env() -> dict[str, str]:
         }
     )
     return env
+
+
+from . import repo as _repo  # noqa: E402,F401 - importing it puts git on PATH
 
 
 def _run_git(args: list[str], cwd: str | Path | None = None, timeout: int = 600) -> str:

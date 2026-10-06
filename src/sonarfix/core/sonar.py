@@ -10,6 +10,7 @@ import re
 import ssl
 from functools import lru_cache
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 
@@ -40,6 +41,50 @@ def _ssl_context() -> ssl.SSLContext | bool:
     except ImportError:
         return True
     return truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
+
+def parse_project_key(value: str) -> str:
+    """Pull a project key out of whatever a user pastes.
+
+    Accepts a full dashboard URL (`.../code?id=KEY`, `.../dashboard?id=KEY`,
+    `.../project/overview?id=KEY`) or a bare key, which is returned as-is.
+    """
+    value = value.strip()
+    if "://" not in value:
+        if not value:
+            raise SonarError("Paste a SonarQube project URL or key.")
+        return value
+
+    parsed = urlparse(value)
+    key = parse_qs(parsed.query).get("id", [None])[0]
+    if key:
+        return key
+
+    parts = [p for p in parsed.path.split("/") if p]
+    if parts:
+        return parts[-1]
+    raise SonarError(f"Could not find a project key in {value!r}.")
+
+
+def server_matches(value: str) -> bool:
+    """True when `value` has no host (a bare key) or its host is the one we're logged into."""
+    if "://" not in value:
+        return True
+    configured = urlparse(get_settings().sonar_url).hostname
+    return urlparse(value).hostname == configured
+
+
+# Pages whose `id` is not a project: a portfolio/application aggregates
+# issues across many unrelated repos, so its issues never line up with the
+# one repo a fix run works against.
+_NON_PROJECT_PAGES = ("portfolio", "application")
+
+
+def is_portfolio_or_application(value: str) -> bool:
+    if "://" not in value:
+        return False
+    parts = [p.lower() for p in urlparse(value).path.split("/") if p]
+    return any(p in _NON_PROJECT_PAGES for p in parts)
 
 
 def _client() -> httpx.Client:
@@ -97,8 +142,9 @@ def list_projects() -> list[dict[str, str]]:
     ]
 
 
-def list_issues(project_key: str) -> list[dict[str, Any]]:
-    """All unresolved issues for a project, following pagination."""
+def list_issues(project_key: str, branch: str | None = None) -> list[dict[str, Any]]:
+    """All unresolved issues for a project (or comma-separated component keys),
+    following pagination. `branch` restricts results to one analysed branch."""
     issues: list[dict[str, Any]] = []
     org = get_settings().sonar_org
     with _client() as client:
@@ -109,6 +155,7 @@ def list_issues(project_key: str) -> list[dict[str, Any]]:
                 "/api/issues/search",
                 organization=org,
                 componentKeys=project_key,
+                branch=branch,
                 resolved="false",
                 ps=_PAGE_SIZE,
                 p=page,

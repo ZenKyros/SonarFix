@@ -156,15 +156,61 @@ def _rethrow(lines: Lines, t: Target) -> Lines | None:
 _COMMENT_LINE = re.compile(r"^\s*(//|#|/\*|\*|\*/)")
 
 
+_LINE_COMMENT = re.compile(r"^\s*//")
+_CODE_LIKE = re.compile(r"[;{})]\s*$|^\w[\w.\[\]]*\s*[-+*/]?=\s*\S")
+
+
+def _is_commented_code_line(line: str) -> bool:
+    """A `//` line whose text reads like a statement rather than prose."""
+    if not _LINE_COMMENT.match(line):
+        return False
+    return bool(_CODE_LIKE.search(re.sub(r"^\s*/+\s*", "", line).rstrip()))
+
+
 def _commented_code(lines: Lines, t: Target) -> Lines | None:
+    """Delete a commented-out block whole, or decline.
+
+    Sonar can flag a single line of a longer block. Deleting only that line
+    leaves the rest live (a `/*` removed exposes the code under it) or orphaned,
+    so the range is widened to the complete block first.
+    """
     if not (1 <= t.start_line <= t.end_line <= len(lines)):
         return None
-    block = lines[t.start_line - 1 : t.end_line]
-    # Only ever delete lines that are purely comments.
-    if not all(_COMMENT_LINE.match(line) for line in block):
-        return None
+    start, end = t.start_line - 1, t.end_line  # slice bounds
+
+    def balance() -> int:
+        text = "".join(lines[start:end])
+        return text.count("/*") - text.count("*/")
+
+    # Widen over a block comment until every `/*` has its `*/` inside the range.
+    while balance() > 0:
+        if end >= len(lines):
+            return None
+        end += 1
+    while balance() < 0:
+        if start == 0:
+            return None
+        start -= 1
+
+    block = lines[start:end]
+    text = "".join(block)
+    if "/*" in text:
+        head = block[0].split("/*", 1)[0]
+        tail = block[-1].rsplit("*/", 1)[-1]
+        if head.strip() or tail.strip():
+            return None  # code shares a line with the comment
+    else:
+        if not all(_COMMENT_LINE.match(line) for line in block):
+            return None
+        # Take the neighbouring `//` lines of the same commented-out code.
+        if all(_LINE_COMMENT.match(line) for line in block):
+            while start > 0 and _is_commented_code_line(lines[start - 1]):
+                start -= 1
+            while end < len(lines) and _is_commented_code_line(lines[end]):
+                end += 1
+
     out = list(lines)
-    del out[t.start_line - 1 : t.end_line]
+    del out[start:end]
     return out
 
 
@@ -175,7 +221,108 @@ def _keyword_lowercase(lines: Lines, t: Target) -> Lines | None:
     return _replace_token(lines, t, found[1].lower())
 
 
+def _empty_statement(lines: Lines, t: Target) -> Lines | None:
+    """S1116: delete a line that is nothing but a stray `;`."""
+    if not 1 <= t.start_line <= len(lines):
+        return None
+    if lines[t.start_line - 1].strip() != ";":
+        return None
+    out = list(lines)
+    del out[t.start_line - 1]
+    return out
+
+
+_FIELD_DECL = re.compile(r"^(\s*)private\s+((?:static\s+)?)(?!readonly\b|const\b|volatile\b)(?=[\w<])")
+
+
+def _readonly_field(lines: Lines, t: Target) -> Lines | None:
+    """S2933: add `readonly` to a private field Sonar says is never reassigned."""
+    found = _token(lines, t)
+    if not found:
+        return None
+    text, name = found
+    match = _FIELD_DECL.match(text)
+    # Fields only: the name must be followed by `;` or `=`, never `(` or `{`.
+    if not match or not re.match(r"\s*[;=]", text[t.end_col :]):
+        return None
+    new = text[: match.end()] + "readonly " + text[match.end() :]
+    out = list(lines)
+    out[t.start_line - 1] = new + _eol(lines[t.start_line - 1])
+    return out
+
+
+_CAST_TOKEN = re.compile(r"^\(\s*[\w.]+(<[\w.,\s<>]+>)?(\[\])*\??\s*\)$")
+
+
+def _redundant_cast(lines: Lines, t: Target) -> Lines | None:
+    """S1905: drop a `(Type)` prefix Sonar reports as redundant."""
+    found = _token(lines, t)
+    if not found or not _CAST_TOKEN.match(found[1].strip()):
+        return None
+    return _replace_token(lines, t, "")
+
+
+_LOCAL_DECL = re.compile(
+    r"""^\s*(?:var|[\w.<>\[\]?]+)\s+(?P<name>\w+)\s*
+        (?:=\s*(?:-?\d+(?:\.\d+)?[fFdDmMlLuU]*|true|false|null|"[^"\\]*"|'[^'\\]*'|default)\s*)?;\s*$""",
+    re.X,
+)
+
+
+def _unused_local(lines: Lines, t: Target) -> Lines | None:
+    """S1481: delete an unused local, only if it has no initializer or a literal one.
+
+    A call or `new` initializer may have side effects, so those go to a human.
+    """
+    found = _token(lines, t)
+    if not found:
+        return None
+    text, name = found
+    match = _LOCAL_DECL.match(text)
+    if not match or match.group("name") != name:
+        return None
+    out = list(lines)
+    del out[t.start_line - 1]
+    return out
+
+
 RECIPES: tuple[Recipe, ...] = (
+    Recipe(
+        id="empty-statement",
+        rules=("csharpsquid:S1116", "java:S1116"),
+        title="Remove the stray empty statement",
+        why_safe="Deletes a line that contains only ';'; it executes nothing.",
+        before="int a = 1;\n;\nint b = 2;",
+        after="int a = 1;\nint b = 2;",
+        apply=_empty_statement,
+    ),
+    Recipe(
+        id="readonly-field",
+        rules=("csharpsquid:S2933",),
+        title="Mark the never-reassigned private field readonly",
+        why_safe="Sonar only reports fields assigned solely at declaration or in a constructor; the compiler enforces it.",
+        before="private int _count;",
+        after="private readonly int _count;",
+        apply=_readonly_field,
+    ),
+    Recipe(
+        id="redundant-cast",
+        rules=("csharpsquid:S1905",),
+        title="Remove the redundant cast",
+        why_safe="The value already has the target type, so the cast changes nothing.",
+        before="var n = (int)count;",
+        after="var n = count;",
+        apply=_redundant_cast,
+    ),
+    Recipe(
+        id="unused-local",
+        rules=("csharpsquid:S1481", "java:S1481"),
+        title="Remove the unused local variable",
+        why_safe="Only when it has no initializer or a literal one, so no side effect is lost.",
+        before="int retries = 3;\nRun();",
+        after="Run();",
+        apply=_unused_local,
+    ),
     Recipe(
         id="logging-exception",
         rules=("python:S8572",),
@@ -255,6 +402,30 @@ _BY_RULE = {rule: recipe for recipe in RECIPES for rule in recipe.rules}
 
 def recipe_for(rule: str | None) -> Recipe | None:
     return _BY_RULE.get(rule or "")
+
+
+def classify_rule(rule: str | None) -> str:
+    """Rule-level triage: "mechanical" if a recipe exists, else "ai".
+
+    This is the cheap first pass. The planner still verifies the recipe against
+    the exact flagged code, so a "mechanical" rule can fall back to "ai" per issue.
+    """
+    return "mechanical" if recipe_for(rule) else "ai"
+
+
+def describe_recipes() -> list[dict]:
+    """Every mechanical fix SonarFix can apply, for docs and the UI."""
+    return [
+        {
+            "id": r.id,
+            "title": r.title,
+            "rules": list(r.rules),
+            "why_safe": r.why_safe,
+            "before": r.before,
+            "after": r.after,
+        }
+        for r in RECIPES
+    ]
 
 
 def target_from(issue: dict, raw: dict) -> Target:
