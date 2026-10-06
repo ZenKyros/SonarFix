@@ -78,6 +78,10 @@ export const api = {
   createBatch: (key, body) => request("POST", `/projects/${key}/batches`, { json: body }),
   listBatches: (key) => request("GET", `/projects/${key}/batches`),
   getBatch: (id) => request("GET", `/batches/${id}`),
+  buildBatch: (id) => request("POST", `/batches/${id}/build`),
+  retryBatch: (id, feedback) =>
+    request("POST", `/batches/${id}/retry`, { json: { feedback: feedback || null } }),
+  abandonBatch: (id) => request("POST", `/batches/${id}/abandon`),
   createPullRequest: (id) => request("POST", `/batches/${id}/pull-request`),
 
   getIssue: (id) => request("GET", `/issues/${id}`),
@@ -87,5 +91,9 @@ export const api = {
     request("POST", `/issues/${id}/approve`, { json: { feedback: feedback || null } }),
   reject: (id, feedback) =>
     request("POST", `/issues/${id}/reject`, { json: { feedback: feedback || null } }),
+  requestBuild: (id) => request("POST", `/issues/${id}/build`),
+  retryBuild: (id, feedback) =>
+    request("POST", `/issues/${id}/build/retry`, { json: { feedback: feedback || null } }),
+  abandonBuild: (id) => request("POST", `/issues/${id}/build/abandon`),
   createIssuePullRequest: (id) => request("POST", `/issues/${id}/pull-request`),
 };

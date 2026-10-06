@@ -95,6 +95,13 @@ class DecisionBody(BaseModel):
     )
 
 
+class BuildRetryBody(BaseModel):
+    feedback: str | None = Field(
+        default=None,
+        description="Instructions for the next attempt; the previous build's output is sent too.",
+    )
+
+
 # --- routes ------------------------------------------------------------------
 
 
@@ -198,6 +205,25 @@ def post_reject(issue_id: str, body: DecisionBody | None = None) -> dict[str, An
     return _guard(service.decide, issue_id, False, feedback)
 
 
+@app.post("/issues/{issue_id}/build")
+def post_build(issue_id: str) -> dict[str, Any]:
+    """Human-triggered: build the fix that's generated and waiting."""
+    return _guard(service.request_build, issue_id)
+
+
+@app.post("/issues/{issue_id}/build/retry")
+def post_build_retry(issue_id: str, body: BuildRetryBody | None = None) -> dict[str, Any]:
+    """A build failed; try again, optionally with reviewer feedback."""
+    feedback = body.feedback if body else None
+    return _guard(service.build_retry, issue_id, feedback or "")
+
+
+@app.post("/issues/{issue_id}/build/abandon")
+def post_build_abandon(issue_id: str) -> dict[str, Any]:
+    """A build failed and the reviewer is done retrying."""
+    return _guard(service.build_abandon, issue_id)
+
+
 @app.post("/issues/{issue_id}/pull-request")
 def post_issue_pull_request(issue_id: str) -> dict[str, Any]:
     """Push the fix branch and open a Bitbucket pull request for one issue."""
@@ -246,6 +272,29 @@ def get_batch(batch_id: int) -> dict[str, Any]:
     if not found:
         raise HTTPException(status_code=404, detail=f"Unknown batch: {batch_id}")
     return found
+
+
+@app.post("/batches/{batch_id}/build")
+def post_batch_build(batch_id: int) -> dict[str, Any]:
+    """Human-triggered: build the batch's blast radius before it can get a PR."""
+    return _guard(batch.request_build, batch_id)
+
+
+@app.post("/batches/{batch_id}/retry")
+def post_batch_retry(
+    batch_id: int, background: BackgroundTasks, body: BuildRetryBody | None = None
+) -> dict[str, Any]:
+    """A batch's build failed; start a fresh attempt with feedback."""
+    feedback = body.feedback if body else None
+    new_id = _guard(batch.retry_with_feedback, batch_id, feedback or "")
+    background.add_task(batch.run, new_id)
+    return store.get_batch(new_id) or {"id": new_id}
+
+
+@app.post("/batches/{batch_id}/abandon")
+def post_batch_abandon(batch_id: int) -> dict[str, Any]:
+    """A batch's build failed and the reviewer is done retrying."""
+    return _guard(batch.abandon, batch_id)
 
 
 @app.post("/batches/{batch_id}/pull-request")

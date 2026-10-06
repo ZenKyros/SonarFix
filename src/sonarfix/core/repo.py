@@ -147,6 +147,12 @@ class RepoWorkspace:
     def diff_between(self, base: str, branch: str) -> str:
         return self._git("diff", f"{base}...{branch}")
 
+    def diff_files_between(self, base: str, branch: str) -> list[str]:
+        """Repository-relative paths changed across every commit on `branch`
+        since it left `base` - the blast radius a batch needs to build."""
+        output = self._git("diff", "--name-only", f"{base}...{branch}")
+        return [line.strip() for line in output.splitlines() if line.strip()]
+
     def abandon(self, base_branch: str, branch: str | None = None) -> None:
         """Throw away a failed attempt and go back to where we started."""
         self._git("reset", "--hard")

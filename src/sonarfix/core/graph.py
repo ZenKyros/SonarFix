@@ -1,11 +1,15 @@
 """The remediation workflow as a LangGraph state machine.
 
-    load_context -> analyze -> await_approval -.-> apply_fix -> finalize
-                                               '-> (rejected) END
+    load_context -> analyze -> await_approval -.-> apply_fix -> await_build -> verify_build -> finalize -.-> END (applied)
+                                               '-> (rejected) END                                        '-> await_build_feedback -.-> apply_fix (retry, loop)
+                                                                                                                              '-> (give up) END
 
-`await_approval` calls `interrupt()`, so the run parks in the SQLite
-checkpointer until a human approves or rejects. That is what lets the API be
-request/response and the Streamlit UI re-render freely without losing a run.
+Both `await_approval` and `await_build`/`await_build_feedback` call
+`interrupt()`, so the run parks in the SQLite checkpointer until a human
+acts: approve/reject the plan, trigger the build explicitly (it never runs
+automatically), and on a failed build, either retry with feedback or give up.
+That is what lets the API be request/response and the UI re-render freely
+without losing a run.
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
 from . import build, engine, sonar, store
+from . import issues as issues_
 from .config import get_settings
 from .repo import RepoWorkspace, branch_prefix, slugify
 from .repo_profile import profile_for
@@ -49,6 +54,8 @@ class FixState(TypedDict, total=False):
     changed_files: list[str]
     # build verification
     build: dict[str, Any]
+    build_feedback: str
+    retry_build: bool
     # output
     pr: dict[str, str]
     commit_sha: str
@@ -139,6 +146,8 @@ def _fix_task(state: FixState) -> str:
     numbered = "\n".join(f"{i}. {step}" for i, step in enumerate(plan, start=1))
     related = analysis.get("related_files") or []
     feedback = (state.get("feedback") or "").strip()
+    prior_build = state.get("build") or {}
+    build_feedback = (state.get("build_feedback") or "").strip()
 
     parts = [
         _issue_header(state),
@@ -157,6 +166,23 @@ def _fix_task(state: FixState) -> str:
             "",
             "## Reviewer notes on the plan - these override the plan where they conflict",
             feedback,
+        ]
+    # Only present on a retry: the previous attempt reached a build and it
+    # failed, so the agent gets the actual compiler output, not just another
+    # blind try at the same plan.
+    if prior_build and not prior_build.get("success"):
+        parts += [
+            "",
+            "## The previous attempt did not build - fix this too",
+            "```",
+            str(prior_build.get("output", ""))[:3000],
+            "```",
+        ]
+    if build_feedback:
+        parts += [
+            "",
+            "## Reviewer notes on the build failure - address these",
+            build_feedback,
         ]
     parts += ["", "Implement the approved plan now."]
     return "\n".join(parts)
@@ -194,9 +220,11 @@ def _pr_task(state: FixState) -> str:
 
 
 def load_context(state: FixState) -> dict[str, Any]:
-    issue = store.get_issue(state["issue_id"])
+    issue = issues_.fetch_one(state["issue_id"])
     if not issue:
-        raise ValueError(f"Unknown issue: {state['issue_id']}. Sync the project first.")
+        raise ValueError(
+            f"Unknown issue: {state['issue_id']}. It may already be resolved in SonarQube."
+        )
 
     project = store.get_project(issue["project_key"])
     if not project or not project.get("repo_path"):
@@ -234,7 +262,7 @@ def load_context(state: FixState) -> dict[str, Any]:
 
 def analyze(state: FixState) -> dict[str, Any]:
     analysis = engine.run_analysis(state["repo_path"], _analysis_task(state))
-    plan_id = store.create_plan(state["issue_id"], analysis, get_settings().model)
+    plan_id = store.create_plan(state["issue"], analysis, get_settings().model)
     return {"analysis": analysis, "plan_id": plan_id, "status": "awaiting_approval"}
 
 
@@ -333,6 +361,23 @@ def apply_fix(state: FixState) -> dict[str, Any]:
     }
 
 
+def await_build(state: FixState) -> dict[str, Any]:
+    """Pause so a human explicitly triggers the build - it never runs on its
+    own right after the fix is generated. Skipped when apply_fix itself
+    already failed; there's nothing staged to build."""
+    if state.get("status") != "fix_generated":
+        return {}
+    interrupt(
+        {
+            "kind": "await_build",
+            "issue_id": state["issue_id"],
+            "branch": state.get("branch"),
+            "diff": state.get("diff"),
+        }
+    )
+    return {}  # the resume value itself doesn't matter - resuming means "build now"
+
+
 def verify_build(state: FixState) -> dict[str, Any]:
     """Build the blast radius of the fix before it is ever offered as a PR."""
     if state.get("status") != "fix_generated":
@@ -398,6 +443,40 @@ def finalize(state: FixState) -> dict[str, Any]:
     return {"pr": pr, "commit_sha": commit_sha, "run_id": run_id, "status": "applied"}
 
 
+def route_after_finalize(state: FixState) -> Literal["await_build_feedback", "__end__"]:
+    return "await_build_feedback" if state.get("status") == "failed" else END
+
+
+def await_build_feedback(state: FixState) -> dict[str, Any]:
+    """The attempt failed - a bad build, or apply_fix itself (crash, no
+    changes, dirty tree). The error is already visible (finalize recorded it
+    in state.error/state.build and in a fix_run row). Park here until a human
+    either retries with feedback or gives up."""
+    decision = interrupt(
+        {
+            "kind": "build_failed",
+            "issue_id": state["issue_id"],
+            "error": state.get("error"),
+            "build": state.get("build"),
+        }
+    )
+    if isinstance(decision, dict):
+        retry = bool(decision.get("retry"))
+        feedback = str(decision.get("feedback") or "").strip()
+    else:
+        retry = bool(decision)
+        feedback = ""
+    return {
+        "retry_build": retry,
+        "build_feedback": feedback,
+        "status": "retrying" if retry else "failed",
+    }
+
+
+def route_after_build_feedback(state: FixState) -> Literal["apply_fix", "__end__"]:
+    return "apply_fix" if state.get("retry_build") else END
+
+
 # --- graph -------------------------------------------------------------------
 
 
@@ -408,16 +487,20 @@ def build_graph() -> Any:
     builder.add_node("analyze", analyze)
     builder.add_node("await_approval", await_approval)
     builder.add_node("apply_fix", apply_fix)
+    builder.add_node("await_build", await_build)
     builder.add_node("verify_build", verify_build)
     builder.add_node("finalize", finalize)
+    builder.add_node("await_build_feedback", await_build_feedback)
 
     builder.add_edge(START, "load_context")
     builder.add_edge("load_context", "analyze")
     builder.add_edge("analyze", "await_approval")
     builder.add_conditional_edges("await_approval", route_approval)
-    builder.add_edge("apply_fix", "verify_build")
+    builder.add_edge("apply_fix", "await_build")
+    builder.add_edge("await_build", "verify_build")
     builder.add_edge("verify_build", "finalize")
-    builder.add_edge("finalize", END)
+    builder.add_conditional_edges("finalize", route_after_finalize)
+    builder.add_conditional_edges("await_build_feedback", route_after_build_feedback)
 
     return builder.compile(checkpointer=get_checkpointer())
 

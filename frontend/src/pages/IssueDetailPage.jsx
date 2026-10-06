@@ -17,6 +17,7 @@ export default function IssueDetailPage() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null);
   const [feedback, setFeedback] = useState("");
+  const [buildFeedback, setBuildFeedback] = useState("");
   const [ruleOpen, setRuleOpen] = useState(false);
   const [displayedThinking, setDisplayedThinking] = useState("");
 
@@ -99,7 +100,10 @@ export default function IssueDetailPage() {
 
       <ol className="progress">
         {["1. Analyze", "2. Review plan", "3. Fix"].map((label, i) => {
-          const done = ["applied", "fix_generated"].includes(state.status);
+          const done =
+            state.awaiting_build ||
+            state.awaiting_build_feedback ||
+            ["applied", "fix_generated", "failed"].includes(state.status);
           const current = done ? 3 : state.awaiting_approval ? 1 : hasPlan ? 1 : 0;
           return (
             <li key={label} className={done || i < current ? "done" : i === current ? "current" : ""}>
@@ -219,7 +223,7 @@ export default function IssueDetailPage() {
               <div className="button-row">
                 <button
                   className="btn btn-primary"
-                  onClick={() => run("approve", "Applying the fix and generating the PR…", () => api.approve(issueId, feedback))}
+                  onClick={() => run("approve", "Applying the fix…", () => api.approve(issueId, feedback))}
                   disabled={busy === "approve"}
                 >
                   {busy === "approve" ? "Applying fix…" : "Approve and generate fix"}
@@ -241,10 +245,27 @@ export default function IssueDetailPage() {
         </section>
       )}
 
-      {["applied", "failed", "fix_generated", "build_passed"].includes(state.status) && (
+      {(state.awaiting_build ||
+        state.awaiting_build_feedback ||
+        ["applied", "failed", "fix_generated", "build_passed", "retrying"].includes(
+          state.status
+        )) && (
         <FixSection
           state={state}
           busy={busy}
+          buildFeedback={buildFeedback}
+          onBuildFeedbackChange={setBuildFeedback}
+          onBuild={() => run("build", "Building the solution…", () => api.requestBuild(issueId))}
+          onRetry={() =>
+            run("retryBuild", "Retrying the fix with your feedback…", () => {
+              const text = buildFeedback;
+              setBuildFeedback("");
+              return api.retryBuild(issueId, text);
+            })
+          }
+          onAbandon={() =>
+            run("abandonBuild", "Stopping retries…", () => api.abandonBuild(issueId))
+          }
           onCreatePr={() =>
             run("createPr", "Pushing the branch and opening the Bitbucket pull request…", () =>
               api.createIssuePullRequest(issueId)
@@ -256,28 +277,16 @@ export default function IssueDetailPage() {
   );
 }
 
-function FixSection({ state, busy, onCreatePr }) {
-  if (state.status === "failed") {
-    const run = state.run || {};
-    return (
-      <section className="card">
-        <h2>Fix</h2>
-        {run.build_status === "failed" && (
-          <div className="banner banner-error">
-            ❌ Build failed — the fix does not compile. The branch was discarded.
-          </div>
-        )}
-        <div className="banner banner-error">{state.error || "The fix could not be generated."}</div>
-        {run.build_output && (
-          <details className="disclosure">
-            <summary>Build output</summary>
-            <pre className="code-block">{run.build_output}</pre>
-          </details>
-        )}
-      </section>
-    );
-  }
-
+function FixSection({
+  state,
+  busy,
+  buildFeedback,
+  onBuildFeedbackChange,
+  onBuild,
+  onRetry,
+  onAbandon,
+  onCreatePr,
+}) {
   const fix = state.fix || {};
   const pr = state.pr || {};
   const run = state.run || {};
@@ -293,28 +302,6 @@ function FixSection({ state, busy, onCreatePr }) {
     <section className="card">
       <h2>Fix</h2>
 
-      {buildStatus === "passed" && (
-        <div className="banner banner-success">
-          ✅ Build successful — the fix compiles cleanly.
-        </div>
-      )}
-      {buildStatus === "skipped" && (
-        <div className="banner banner-warn">Build verification skipped: {run.build_output}</div>
-      )}
-      {run.build_output && (
-        <details className="disclosure">
-          <summary>Build output</summary>
-          <pre className="code-block">{run.build_output}</pre>
-        </details>
-      )}
-
-      {state.branch && (
-        <div className="banner banner-success">
-          Changes committed to branch <code>{state.branch}</code>
-        </div>
-      )}
-      {state.commit_sha && <p className="caption">Commit {state.commit_sha}</p>}
-
       {fix.changes_summary && (
         <dl className="def-list">
           <dt>What changed</dt>
@@ -328,6 +315,75 @@ function FixSection({ state, busy, onCreatePr }) {
           <DiffBlock diff={state.diff} />
         </>
       )}
+
+      {state.awaiting_build && (
+        <div className="approval">
+          <p>
+            <strong>Ready to build.</strong> Nothing is pushed or proposed as a
+            pull request until the build passes.
+          </p>
+          <div className="button-row">
+            <button className="btn btn-primary" onClick={onBuild} disabled={busy === "build"}>
+              {busy === "build" ? "Building…" : "Build"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {state.awaiting_build_feedback && (
+        <div className="approval">
+          <div className="banner banner-error">
+            ❌ Build failed — the fix does not compile. The branch was discarded.
+          </div>
+          {run.build_output && (
+            <details className="disclosure" open>
+              <summary>Build output</summary>
+              <pre className="code-block">{run.build_output}</pre>
+            </details>
+          )}
+          <p>
+            <strong>Tell the AI what to do differently</strong>, then try again —
+            it will see this build's error output automatically either way.
+          </p>
+          <textarea
+            className="textarea"
+            placeholder="E.g. “the project needs an extra using statement” or “don't change the method signature”…"
+            value={buildFeedback}
+            onChange={(e) => onBuildFeedbackChange(e.target.value)}
+          />
+          <div className="button-row">
+            <button className="btn btn-primary" onClick={onRetry} disabled={busy === "retryBuild"}>
+              {busy === "retryBuild" ? "Retrying…" : "Retry with feedback"}
+            </button>
+            <button className="btn" onClick={onAbandon} disabled={busy === "abandonBuild"}>
+              {busy === "abandonBuild" ? "Stopping…" : "Give up"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {state.status === "failed" && !state.awaiting_build_feedback && (
+        <div className="banner banner-error">
+          {state.error || "The fix could not be generated."}
+        </div>
+      )}
+
+      {buildStatus === "passed" && (
+        <div className="banner banner-success">
+          ✅ Build successful — the fix compiles cleanly.
+        </div>
+      )}
+      {buildStatus === "skipped" && (
+        <div className="banner banner-warn">Build verification skipped: {run.build_output}</div>
+      )}
+      {buildStatus && buildStatus !== "failed" && run.build_output && (
+        <details className="disclosure">
+          <summary>Build output</summary>
+          <pre className="code-block">{run.build_output}</pre>
+        </details>
+      )}
+
+      {state.commit_sha && <p className="caption">Commit {state.commit_sha}</p>}
 
       {commitMessage && (
         <>

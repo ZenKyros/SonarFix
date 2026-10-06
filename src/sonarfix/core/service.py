@@ -9,6 +9,7 @@ from typing import Any
 from langgraph.types import Command
 
 from . import graph as workflow
+from . import issues as issues_
 from . import sonar, store
 from .config import ConfigError, get_settings
 from .repo import RepoError, RepoWorkspace
@@ -16,31 +17,6 @@ from .repo import RepoError, RepoWorkspace
 
 class ServiceError(RuntimeError):
     """Something the user can fix: bad config, missing repo, unknown issue."""
-
-
-# A handful of repos (e.g. inf-src) are scanned in Sonar as several separate
-# project keys that share one git repo and one branch. We present each such
-# group as a single "composite" project so the one-repo-per-project fix/PR
-# flow still applies; its issues are the union of the real Sonar projects.
-COMPOSITE_PROJECTS: dict[str, dict[str, Any]] = {
-    "INF-SRC:11.10-Support": {
-        "name": "INF-SRC (11.10-Support)",
-        "branch": "11.10-Support-infsrc",
-        # inf-src is a monorepo: each Sonar sub-project lives in a folder
-        # named after the part of its key after this prefix, e.g.
-        # 'com.unisys.InfoImage:INF-SRC.DataInterfaceService' -> 'DataInterfaceService/'.
-        "subfolder_prefix": "com.unisys.InfoImage:INF-SRC.",
-        "component_keys": (
-            "com.unisys.InfoImage:INF-SRC.IIFContentDownloader",
-            "com.unisys.InfoImage:INF-SRC.ImageQualityAppService",
-            "com.unisys.InfoImage:INF-SRC.IIFAzureADGateWay",
-            "com.unisys.InfoImage:INF-SRC.IIFContentIngestionService",
-            "com.unisys.InfoImage:INF-SRC.IIFMessageEncryption",
-            "com.unisys.InfoImage:INF-SRC.IIFBulkDelete",
-            "com.unisys.InfoImage:INF-SRC.DataInterfaceService",
-        ),
-    },
-}
 
 
 def _git(*args: str, cwd: str | Path | None = None) -> str:
@@ -60,7 +36,7 @@ def sync_projects() -> list[dict[str, Any]]:
     """Pull the project list from Sonar into SQLite and return what we now hold."""
     store.upsert_projects(sonar.list_projects())
     store.upsert_projects(
-        [{"key": key, "name": cfg["name"]} for key, cfg in COMPOSITE_PROJECTS.items()]
+        [{"key": key, "name": cfg["name"]} for key, cfg in issues_.COMPOSITE_PROJECTS.items()]
     )
     return store.list_projects()
 
@@ -83,16 +59,25 @@ def set_repo_path(project_key: str, repo_path: str) -> dict[str, Any]:
 
 
 def sync_issues(project_key: str) -> dict[str, Any]:
+    """Refresh the local snapshot the Batch/Plan screen plans against.
+
+    The single-issue screens (list/detail/analyze/fix/PR) never read this -
+    they always fetch live via core/issues.py, so they can't go stale. This
+    snapshot exists only because the Batch/Plan screen (and the PowerShell
+    agentcli bridge) cluster issues against actual file content and need a
+    stable set to plan against; it's a deliberate, user-triggered refresh,
+    not an implicit cache used for display.
+    """
     if not store.get_project(project_key):
         raise ServiceError(f"Unknown project: {project_key}. Sync projects first.")
-    composite = COMPOSITE_PROJECTS.get(project_key)
+    composite = issues_.COMPOSITE_PROJECTS.get(project_key)
     if composite:
-        issues = sonar.list_issues(
+        raws = sonar.list_issues(
             ",".join(composite["component_keys"]), branch=composite["branch"]
         )
         prefix = composite.get("subfolder_prefix")
         if prefix:
-            for issue in issues:
+            for issue in raws:
                 sub_project = issue.get("project") or ""
                 if sub_project.startswith(prefix):
                     subfolder = sub_project[len(prefix) :]
@@ -101,8 +86,8 @@ def sync_issues(project_key: str) -> dict[str, Any]:
                     )
                     issue["component"] = f"{sub_project}:{subfolder}/{rest}"
     else:
-        issues = sonar.list_issues(project_key)
-    count = store.replace_issues(project_key, issues)
+        raws = sonar.list_issues(project_key)
+    count = store.replace_issues(project_key, raws)
     store.mark_synced(project_key)
     return {"project_key": project_key, "issues_synced": count}
 
@@ -150,16 +135,17 @@ def ensure_repo(
 def list_issues(
     project_key: str, severity: str | None = None, issue_type: str | None = None
 ) -> list[dict[str, Any]]:
-    return store.list_issues(project_key, severity, issue_type)
+    """Live from SonarQube every time - never a local cache that can go stale."""
+    return issues_.filter_and_sort(issues_.fetch_many(project_key), severity, issue_type)
 
 
 def issue_facets(project_key: str) -> dict[str, list[str]]:
-    return store.issue_facets(project_key)
+    return issues_.facets(project_key)
 
 
 def issue_detail(issue_id: str) -> dict[str, Any]:
     """Issue row, rule description and the code around the reported line."""
-    issue = store.get_issue(issue_id)
+    issue = issues_.fetch_one(issue_id)
     if not issue:
         raise ServiceError(f"Unknown issue: {issue_id}")
 
@@ -220,8 +206,8 @@ def analyze_issue(issue_id: str) -> dict[str, Any]:
     Re-analysing an issue starts a clean run: the old checkpoint is dropped and
     a new fix plan row is written, so previous plans remain as history.
     """
-    if not store.get_issue(issue_id):
-        raise ServiceError(f"Unknown issue: {issue_id}. Sync the project first.")
+    if not issues_.fetch_one(issue_id):
+        raise ServiceError(f"Unknown issue: {issue_id}. It may already be resolved in SonarQube.")
 
     config = workflow.thread_config(issue_id)
     thread_id = config["configurable"]["thread_id"]
@@ -241,8 +227,28 @@ def analyze_issue(issue_id: str) -> dict[str, Any]:
     }
 
 
+def _resume_payload(issue_id: str, result: dict[str, Any]) -> dict[str, Any]:
+    plan = _plan_payload(issue_id)
+    return {
+        "issue_id": issue_id,
+        "status": result.get("status", "unknown"),
+        "error": result.get("error"),
+        "plan": plan,
+        "branch": result.get("branch"),
+        "diff": result.get("diff"),
+        "commit_sha": result.get("commit_sha"),
+        "pr": result.get("pr"),
+        "fix": result.get("fix"),
+        "run": _run_payload(plan.get("id") if plan else None),
+    }
+
+
 def decide(issue_id: str, approved: bool, feedback: str | None = None) -> dict[str, Any]:
-    """Step 7, then 8-10 when approved. Resumes the parked run."""
+    """Step 7: approve or reject the plan. Resumes the parked run.
+
+    Approving no longer builds automatically - it stops right after the fix
+    is generated and parks at `await_build`, waiting for `request_build`.
+    """
     config = workflow.thread_config(issue_id)
     graph = workflow.build_graph()
 
@@ -263,19 +269,42 @@ def decide(issue_id: str, approved: bool, feedback: str | None = None) -> dict[s
             config=config,
         )
 
-    plan = _plan_payload(issue_id)
-    return {
-        "issue_id": issue_id,
-        "status": result.get("status", "unknown"),
-        "error": result.get("error"),
-        "plan": plan,
-        "branch": result.get("branch"),
-        "diff": result.get("diff"),
-        "commit_sha": result.get("commit_sha"),
-        "pr": result.get("pr"),
-        "fix": result.get("fix"),
-        "run": _run_payload(plan.get("id") if plan else None),
-    }
+    return _resume_payload(issue_id, result)
+
+
+def request_build(issue_id: str) -> dict[str, Any]:
+    """Human clicked "Build": actually build the fix that's ready and waiting."""
+    config = workflow.thread_config(issue_id)
+    graph = workflow.build_graph()
+    snapshot = graph.get_state(config)
+    if not snapshot.next or "await_build" not in snapshot.next:
+        raise ServiceError("Nothing is waiting to be built for this issue.")
+    result = graph.invoke(Command(resume=True), config=config)
+    return _resume_payload(issue_id, result)
+
+
+def build_retry(issue_id: str, feedback: str = "") -> dict[str, Any]:
+    """Human reviewed a failed build and wants another attempt, with feedback."""
+    config = workflow.thread_config(issue_id)
+    graph = workflow.build_graph()
+    snapshot = graph.get_state(config)
+    if not snapshot.next or "await_build_feedback" not in snapshot.next:
+        raise ServiceError("No failed build is waiting for a retry on this issue.")
+    result = graph.invoke(
+        Command(resume={"retry": True, "feedback": feedback or ""}), config=config
+    )
+    return _resume_payload(issue_id, result)
+
+
+def build_abandon(issue_id: str) -> dict[str, Any]:
+    """Human reviewed a failed build and is done retrying."""
+    config = workflow.thread_config(issue_id)
+    graph = workflow.build_graph()
+    snapshot = graph.get_state(config)
+    if not snapshot.next or "await_build_feedback" not in snapshot.next:
+        raise ServiceError("No failed build is waiting on this issue.")
+    result = graph.invoke(Command(resume={"retry": False}), config=config)
+    return _resume_payload(issue_id, result)
 
 
 def workflow_state(issue_id: str) -> dict[str, Any]:
@@ -283,10 +312,13 @@ def workflow_state(issue_id: str) -> dict[str, Any]:
     plan = _plan_payload(issue_id)
     snapshot = workflow.build_graph().get_state(workflow.thread_config(issue_id))
     values = snapshot.values if isinstance(snapshot.values, dict) else {}
+    next_nodes = snapshot.next or ()
     return {
         "issue_id": issue_id,
         "status": values.get("status"),
-        "awaiting_approval": bool(snapshot.next and "await_approval" in snapshot.next),
+        "awaiting_approval": "await_approval" in next_nodes,
+        "awaiting_build": "await_build" in next_nodes,
+        "awaiting_build_feedback": "await_build_feedback" in next_nodes,
         "plan": plan,
         "branch": values.get("branch"),
         "diff": values.get("diff"),
@@ -368,9 +400,6 @@ def create_pull_request(issue_id: str) -> dict[str, Any]:
     """
     from . import scm
 
-    issue = store.get_issue(issue_id)
-    if not issue:
-        raise ServiceError(f"Unknown issue: {issue_id}")
     plan = store.latest_plan(issue_id)
     if not plan:
         raise ServiceError("Analyze and approve a fix before opening a pull request.")
@@ -380,7 +409,7 @@ def create_pull_request(issue_id: str) -> dict[str, Any]:
     if run.get("pr_url"):
         return run
 
-    project = store.get_project(issue["project_key"]) or {}
+    project = store.get_project(plan["project_key"]) or {}
     repo_path = project.get("repo_path")
     readiness = scm.status(repo_path)
     if not readiness["ready"]:
@@ -392,7 +421,7 @@ def create_pull_request(issue_id: str) -> dict[str, Any]:
         repo_path,
         run["branch"],
         base_branch,
-        run.get("pr_title") or issue.get("message") or f"SonarFix: {issue_id}",
+        run.get("pr_title") or plan.get("message") or f"SonarFix: {issue_id}",
         run.get("pr_description") or "",
     )
     store.set_run_pr_url(int(run["id"]), url)

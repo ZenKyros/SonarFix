@@ -173,6 +173,15 @@ def list_issues(project_key: str, branch: str | None = None) -> list[dict[str, A
     return issues
 
 
+def get_issue(issue_key: str) -> dict[str, Any] | None:
+    """One issue by its Sonar key, live - no project_key or componentKeys
+    needed, so this works regardless of which project it belongs to."""
+    with _client() as client:
+        payload = _get(client, "/api/issues/search", issues=issue_key, ps=1)
+    found = payload.get("issues", [])
+    return found[0] if found else None
+
+
 def get_rule(rule_key: str) -> dict[str, str]:
     """Rule name plus its description as plain text."""
     if not rule_key:

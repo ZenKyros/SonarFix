@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
 import DiffBlock from "../components/DiffBlock";
 import ErrorBanner from "../components/ErrorBanner";
@@ -10,6 +10,8 @@ const ACTIVE = new Set(["queued", "running"]);
 const STATUS_LABEL = {
   queued: "Queued",
   running: "Running",
+  awaiting_build: "Ready to build",
+  build_failed: "Build failed",
   ready: "Ready for review",
   pr_open: "Pull request open",
   no_changes: "No changes",
@@ -18,10 +20,13 @@ const STATUS_LABEL = {
 
 export default function BatchPage() {
   const { batchId } = useParams();
+  const navigate = useNavigate();
   const [batch, setBatch] = useState(null);
   const [scm, setScm] = useState(null);
   const [error, setError] = useState(null);
   const [publishing, setPublishing] = useState(false);
+  const [busy, setBusy] = useState(null);
+  const [buildFeedback, setBuildFeedback] = useState("");
   const { start, update, finish } = useStatus();
   const statusIdRef = useRef(null);
 
@@ -78,6 +83,44 @@ export default function BatchPage() {
     }
   };
 
+  const doBuild = async () => {
+    setError(null);
+    setBusy("build");
+    try {
+      setBatch(await api.buildBatch(batchId));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const doRetry = async () => {
+    setError(null);
+    setBusy("retry");
+    try {
+      const text = buildFeedback;
+      setBuildFeedback("");
+      const fresh = await api.retryBatch(batchId, text);
+      navigate(`/batches/${fresh.id}`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : String(err));
+      setBusy(null);
+    }
+  };
+
+  const doAbandon = async () => {
+    setError(null);
+    setBusy("abandon");
+    try {
+      setBatch(await api.abandonBatch(batchId));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   if (!batch) {
     return (
       <div className="page">
@@ -87,7 +130,12 @@ export default function BatchPage() {
     );
   }
 
-  const stage = batch.status === "pr_open" ? 4 : batch.status === "ready" ? 2 : 1;
+  const stage =
+    batch.status === "pr_open"
+      ? 4
+      : ["ready", "awaiting_build", "build_failed"].includes(batch.status)
+      ? 2
+      : 1;
   const steps = batch.steps || [];
 
   return (
@@ -129,12 +177,71 @@ export default function BatchPage() {
         </section>
       )}
 
+      {batch.status === "awaiting_build" && (
+        <section className="card">
+          <div className="approval">
+            <p>
+              <strong>Ready to build.</strong> Nothing is pushed or proposed as
+              a pull request until the build passes.
+            </p>
+            <div className="button-row">
+              <button className="btn btn-primary" onClick={doBuild} disabled={busy === "build"}>
+                {busy === "build" ? "Building…" : "Build"}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {batch.status === "build_failed" && (
+        <section className="card">
+          <div className="approval">
+            <div className="banner banner-error">
+              ❌ Build failed — the fix does not compile. The branch was discarded.
+            </div>
+            {batch.build_output && (
+              <details className="disclosure" open>
+                <summary>Build output</summary>
+                <pre className="code-block">{batch.build_output}</pre>
+              </details>
+            )}
+            <p>
+              <strong>Tell the AI what to do differently</strong>, then try
+              again — it starts a fresh run with this build's error output and
+              your notes.
+            </p>
+            <textarea
+              className="textarea"
+              placeholder="E.g. “the project needs an extra using statement”…"
+              value={buildFeedback}
+              onChange={(e) => setBuildFeedback(e.target.value)}
+            />
+            <div className="button-row">
+              <button className="btn btn-primary" onClick={doRetry} disabled={busy === "retry"}>
+                {busy === "retry" ? "Retrying…" : "Retry with feedback"}
+              </button>
+              <button className="btn" onClick={doAbandon} disabled={busy === "abandon"}>
+                {busy === "abandon" ? "Stopping…" : "Give up"}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {(batch.status === "ready" || batch.status === "pr_open") && (
         <section className="card">
           <div className="card-head">
             <h2>Pull request</h2>
             {scm?.provider && <span className="chip">{scm.provider} · {scm.repository}</span>}
           </div>
+          {batch.build_status === "passed" && (
+            <div className="banner banner-success">
+              ✅ Build successful — the fix compiles cleanly.
+            </div>
+          )}
+          {batch.build_status === "skipped" && (
+            <div className="banner banner-warn">Build verification skipped: {batch.build_output}</div>
+          )}
           {batch.status === "pr_open" ? (
             <div className="banner banner-success">
               Pull request opened —{" "}

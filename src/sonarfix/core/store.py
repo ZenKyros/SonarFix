@@ -34,9 +34,19 @@ CREATE TABLE IF NOT EXISTS issues (
 
 CREATE INDEX IF NOT EXISTS idx_issues_project ON issues(project_key);
 
+-- issue_id is NOT a foreign key: fix_plans snapshots the issue it was made
+-- for (rule/severity/file/line/message) at analysis time, so a plan's
+-- history never depends on that issue still being cached anywhere locally.
 CREATE TABLE IF NOT EXISTS fix_plans (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    issue_id      TEXT NOT NULL REFERENCES issues(id),
+    issue_id      TEXT NOT NULL,
+    project_key   TEXT,
+    rule          TEXT,
+    severity      TEXT,
+    type          TEXT,
+    message       TEXT,
+    file_path     TEXT,
+    line          INTEGER,
     explanation   TEXT,
     root_cause    TEXT,
     impact        TEXT,
@@ -84,6 +94,9 @@ CREATE TABLE IF NOT EXISTS batches (
     pr_title      TEXT,
     pr_description TEXT,
     pr_url        TEXT,
+    build_status  TEXT,
+    build_output  TEXT,
+    retry_of      INTEGER,
     error         TEXT,
     created_at    TEXT,
     updated_at    TEXT
@@ -123,11 +136,76 @@ _FIX_RUNS_MIGRATIONS = (
     "ALTER TABLE fix_runs ADD COLUMN build_output TEXT",
 )
 
+_BATCHES_MIGRATIONS = (
+    "ALTER TABLE batches ADD COLUMN build_status TEXT",
+    "ALTER TABLE batches ADD COLUMN build_output TEXT",
+    "ALTER TABLE batches ADD COLUMN retry_of INTEGER",
+)
+
+
+def _migrate_fix_plans(conn: sqlite3.Connection) -> None:
+    """Drop the issue_id foreign key and add snapshot columns, preserving rows.
+
+    SQLite can't ALTER a foreign key away, so an older fix_plans table (one
+    without `project_key`) is rebuilt under a temporary name, populated with a
+    best-effort backfill from `issues` (joined while it still has those rows),
+    then swapped into place - built under a temp name and dropped-then-renamed
+    rather than the old table being renamed aside, so fix_runs' own foreign
+    key (which names "fix_plans" literally) is never retargeted by SQLite's
+    rename-tracking and left dangling once the old table is gone.
+    """
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(fix_plans)")}
+    if not cols or "project_key" in cols:
+        return  # fresh db, or already migrated
+    conn.execute("PRAGMA foreign_keys = OFF")
+    conn.execute(
+        """
+        CREATE TABLE fix_plans_new (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            issue_id      TEXT NOT NULL,
+            project_key   TEXT,
+            rule          TEXT,
+            severity      TEXT,
+            type          TEXT,
+            message       TEXT,
+            file_path     TEXT,
+            line          INTEGER,
+            explanation   TEXT,
+            root_cause    TEXT,
+            impact        TEXT,
+            plan_json     TEXT,
+            testing_notes TEXT,
+            confidence    REAL,
+            status        TEXT NOT NULL DEFAULT 'pending',
+            feedback      TEXT,
+            model         TEXT,
+            created_at    TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO fix_plans_new
+            (id, issue_id, project_key, rule, severity, type, message, file_path,
+             line, explanation, root_cause, impact, plan_json, testing_notes,
+             confidence, status, feedback, model, created_at)
+        SELECT
+            p.id, p.issue_id, i.project_key, i.rule, i.severity, i.type, i.message,
+            i.file_path, i.line, p.explanation, p.root_cause, p.impact, p.plan_json,
+            p.testing_notes, p.confidence, p.status, p.feedback, p.model, p.created_at
+        FROM fix_plans p
+        LEFT JOIN issues i ON i.id = p.issue_id
+        """
+    )
+    conn.execute("DROP TABLE fix_plans")
+    conn.execute("ALTER TABLE fix_plans_new RENAME TO fix_plans")
+
 
 def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
-        for statement in _FIX_RUNS_MIGRATIONS:
+        _migrate_fix_plans(conn)
+        for statement in (*_FIX_RUNS_MIGRATIONS, *_BATCHES_MIGRATIONS):
             try:
                 conn.execute(statement)
             except sqlite3.OperationalError:
@@ -305,15 +383,26 @@ def issue_facets(project_key: str) -> dict[str, list[str]]:
 # --- fix plans ---------------------------------------------------------------
 
 
-def create_plan(issue_id: str, analysis: dict[str, Any], model: str) -> int:
+def create_plan(issue: dict[str, Any], analysis: dict[str, Any], model: str) -> int:
+    """`issue` is the normalized live-fetched issue (see core/issues.py) - its
+    rule/severity/file/line/message are snapshotted here so this plan's
+    history reads back the same regardless of what SonarQube says later."""
     with connect() as conn:
         cursor = conn.execute(
             "INSERT INTO fix_plans "
-            "(issue_id, explanation, root_cause, impact, plan_json, "
+            "(issue_id, project_key, rule, severity, type, message, file_path, line, "
+            " explanation, root_cause, impact, plan_json, "
             " testing_notes, confidence, status, model, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
             (
-                issue_id,
+                issue["id"],
+                issue.get("project_key"),
+                issue.get("rule"),
+                issue.get("severity"),
+                issue.get("type"),
+                issue.get("message"),
+                issue.get("file_path"),
+                issue.get("line"),
                 analysis.get("explanation"),
                 analysis.get("root_cause"),
                 analysis.get("impact"),

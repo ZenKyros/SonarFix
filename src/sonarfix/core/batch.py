@@ -12,7 +12,7 @@ import traceback
 from collections import defaultdict
 from typing import Any
 
-from . import engine, scm, sonar, store
+from . import build, engine, scm, sonar, store
 from .config import get_settings
 from .planner import Group, Occurrence, SourceFile, build_groups, classify
 from .recipes import target_from
@@ -243,12 +243,10 @@ def run(batch_id: int) -> None:
             store.update_batch(batch_id, status="no_changes", branch=None, steps=steps)
             return
 
-        title, description = pr_text(batch["project_key"], steps)
-        workspace.checkout(base)  # leave the user's tree where it was
-        store.update_batch(
-            batch_id, status="ready", diff=diff, pr_title=title,
-            pr_description=description, steps=steps,
-        )
+        # Stop here - nothing builds or gets a PR until a human clicks
+        # "Build" (see request_build). The workspace stays on `branch`;
+        # that's what gets built.
+        store.update_batch(batch_id, status="awaiting_build", diff=diff, steps=steps)
     except Exception as exc:  # noqa: BLE001 - record, never crash the worker
         if workspace and base:
             try:
@@ -259,6 +257,84 @@ def run(batch_id: int) -> None:
             batch_id, status="failed", steps=steps,
             error=f"{exc}\n\n{traceback.format_exc(limit=3)}",
         )
+
+
+# --- build verification --------------------------------------------------------
+
+
+def request_build(batch_id: int) -> dict[str, Any]:
+    """Human clicked "Build": verify the batch's blast radius actually compiles.
+
+    Never runs on its own right after the fixes are applied. On success,
+    the PR title/description are generated and the batch is ready to
+    publish; on failure the branch is discarded and the batch parks at
+    'build_failed' for a human to retry (with feedback) or give up.
+    """
+    batch_row = store.get_batch(batch_id)
+    if not batch_row:
+        raise BatchError(f"Unknown batch: {batch_id}")
+    if batch_row["status"] != "awaiting_build":
+        raise BatchError(f"Batch {batch_id} is not waiting to be built.")
+
+    project = store.get_project(batch_row["project_key"]) or {}
+    workspace = RepoWorkspace(project["repo_path"])
+    changed_files = workspace.diff_files_between(batch_row["base_branch"], batch_row["branch"])
+
+    result = build.verify(str(workspace.path), changed_files)
+    if not result["success"]:
+        workspace.abandon(batch_row["base_branch"], batch_row["branch"])
+        store.update_batch(
+            batch_id, status="build_failed", branch=None,
+            build_status=result["status"], build_output=result["output"],
+        )
+        return store.get_batch(batch_id) or {}
+
+    title, description = pr_text(batch_row["project_key"], batch_row["steps"] or [])
+    workspace.checkout(batch_row["base_branch"])  # leave the user's tree where it was
+    store.update_batch(
+        batch_id, status="ready", pr_title=title, pr_description=description,
+        build_status=result["status"], build_output=result["output"],
+    )
+    return store.get_batch(batch_id) or {}
+
+
+def retry_with_feedback(batch_id: int, feedback: str = "") -> int:
+    """A build failed; start a fresh batch with the same selection, feeding
+    the AI groups the build error and the reviewer's feedback as reviewer
+    notes. Returns the new batch id - run it the same way as a fresh one."""
+    old = store.get_batch(batch_id)
+    if not old:
+        raise BatchError(f"Unknown batch: {batch_id}")
+    if old["status"] != "build_failed":
+        raise BatchError(f"Batch {batch_id} has no failed build to retry.")
+
+    selection = dict(old["selection"] or {})
+    notes_parts = [(selection.get("notes") or "").strip()]
+    if old.get("build_output"):
+        notes_parts.append(
+            "## The previous attempt did not build - fix this too\n```\n"
+            + old["build_output"][:3000] + "\n```"
+        )
+    if feedback.strip():
+        notes_parts.append(
+            "## Reviewer notes on the build failure - address these\n" + feedback.strip()
+        )
+    selection["notes"] = "\n\n".join(p for p in notes_parts if p)
+
+    new_id = store.create_batch(old["project_key"], selection)
+    store.update_batch(new_id, retry_of=batch_id)
+    return new_id
+
+
+def abandon(batch_id: int) -> dict[str, Any]:
+    """A build failed and the reviewer is done retrying - mark it terminal."""
+    batch_row = store.get_batch(batch_id)
+    if not batch_row:
+        raise BatchError(f"Unknown batch: {batch_id}")
+    if batch_row["status"] != "build_failed":
+        raise BatchError(f"Batch {batch_id} has no failed build to abandon.")
+    store.update_batch(batch_id, status="failed")
+    return store.get_batch(batch_id) or {}
 
 
 # --- pull request ------------------------------------------------------------
