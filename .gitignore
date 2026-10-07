@@ -17,3 +17,4 @@ data/*.db-wal
 data/repos/
 .sonarfix/
 demo/
+data/sonarfix.db-wal
