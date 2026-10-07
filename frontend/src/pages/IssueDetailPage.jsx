@@ -253,6 +253,7 @@ export default function IssueDetailPage() {
         <FixSection
           state={state}
           busy={busy}
+          repoPath={detail.project?.repo_path}
           buildFeedback={buildFeedback}
           onBuildFeedbackChange={setBuildFeedback}
           onBuild={() => run("build", "Building the solution…", () => api.requestBuild(issueId))}
@@ -280,6 +281,7 @@ export default function IssueDetailPage() {
 function FixSection({
   state,
   busy,
+  repoPath,
   buildFeedback,
   onBuildFeedbackChange,
   onBuild,
@@ -333,8 +335,23 @@ function FixSection({
       {state.awaiting_build_feedback && (
         <div className="approval">
           <div className="banner banner-error">
-            ❌ Build failed — the fix does not compile. The branch was discarded.
+            {run.build_status === "skipped"
+              ? "⚠️ Build could not be verified — no matching project was found, or no build tool is available here. This is NOT a pass."
+              : "❌ Build failed — the fix does not compile."}
           </div>
+          {state.branch && (
+            <p className="caption">
+              The attempt is kept on branch <code>{state.branch}</code>
+              {repoPath ? (
+                <>
+                  {" "}
+                  in <code>{repoPath}</code>
+                </>
+              ) : null}{" "}
+              — nothing was discarded. Open it yourself (e.g. in Visual
+              Studio) to double-check.
+            </p>
+          )}
           {run.build_output && (
             <details className="disclosure" open>
               <summary>Build output</summary>

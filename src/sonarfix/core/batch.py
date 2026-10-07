@@ -267,8 +267,12 @@ def request_build(batch_id: int) -> dict[str, Any]:
 
     Never runs on its own right after the fixes are applied. On success,
     the PR title/description are generated and the batch is ready to
-    publish; on failure the branch is discarded and the batch parks at
-    'build_failed' for a human to retry (with feedback) or give up.
+    publish. On failure - or if the build could not even be checked (no
+    matching project, or no build tool on this machine - "skipped" is NOT a
+    pass) - the batch parks at 'build_failed' for a human to retry (with
+    feedback) or give up. Either way the branch is kept, never deleted: every
+    commit made during `run()` is already real, so the attempt stays
+    inspectable (e.g. open it in Visual Studio and build it yourself).
     """
     batch_row = store.get_batch(batch_id)
     if not batch_row:
@@ -281,11 +285,17 @@ def request_build(batch_id: int) -> dict[str, Any]:
     changed_files = workspace.diff_files_between(batch_row["base_branch"], batch_row["branch"])
 
     result = build.verify(str(workspace.path), changed_files)
-    if not result["success"]:
-        workspace.abandon(batch_row["base_branch"], batch_row["branch"])
+    if result["status"] == "skipped" or not result["success"]:
+        workspace.checkout(batch_row["base_branch"])  # keep the branch - just stop sitting on it
+        note = (
+            "Build could NOT be verified - no matching project was found, or no "
+            "build tool is available on this machine. This is not a pass."
+            if result["status"] == "skipped"
+            else "Build verification failed - the fix does not compile."
+        )
         store.update_batch(
-            batch_id, status="build_failed", branch=None,
-            build_status=result["status"], build_output=result["output"],
+            batch_id, status="build_failed",
+            build_status=result["status"], build_output=f"{note}\n\n{result['output']}",
         )
         return store.get_batch(batch_id) or {}
 

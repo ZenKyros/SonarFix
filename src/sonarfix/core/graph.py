@@ -379,22 +379,56 @@ def await_build(state: FixState) -> dict[str, Any]:
 
 
 def verify_build(state: FixState) -> dict[str, Any]:
-    """Build the blast radius of the fix before it is ever offered as a PR."""
+    """Build the blast radius of the fix before it is ever offered as a PR.
+
+    A "skipped" result (no .csproj owned the changed files, or no build tool
+    is on this machine) means the build was never actually checked - that is
+    NOT the same as a pass, and must not finalize as one. Both that case and
+    a real compile failure park at await_build_feedback for a human decision;
+    neither one deletes the branch, so the attempt stays on disk to inspect
+    or build yourself (e.g. in Visual Studio) either way.
+    """
     if state.get("status") != "fix_generated":
         return {}  # apply_fix already failed - nothing staged to build
 
     result = build.verify(state["repo_path"], state.get("changed_files") or [])
-    if not result["success"]:
-        workspace = RepoWorkspace(state["repo_path"])
-        workspace.abandon(state["base_branch"], state.get("branch"))
+    branch = state.get("branch")
+    repo_path = state["repo_path"]
+
+    if result["status"] == "skipped":
+        workspace = RepoWorkspace(repo_path)
+        workspace.preserve_and_checkout(
+            state["base_branch"], f"SonarFix (build not verified): {state['issue'].get('message', '')[:80]}"
+        )
         return {
             "build": result,
             "status": "failed",
             "error": (
-                "Build verification failed - the fix does not compile:\n\n"
+                "Build could NOT be verified - no matching project was found, or "
+                "no build tool is available on this machine. This is not a pass; "
+                f"the fix is preserved on branch `{branch}` in {repo_path} so you "
+                "can check it yourself (e.g. open it in Visual Studio and build it).\n\n"
+                + result["output"]
+            ),
+        }
+
+    if not result["success"]:
+        workspace = RepoWorkspace(repo_path)
+        workspace.preserve_and_checkout(
+            state["base_branch"], f"SonarFix (build failed): {state['issue'].get('message', '')[:80]}"
+        )
+        return {
+            "build": result,
+            "status": "failed",
+            "error": (
+                "Build verification failed - the fix does not compile. The "
+                f"attempt is preserved on branch `{branch}` in {repo_path} if you "
+                "want to inspect it (e.g. open it in Visual Studio and build it "
+                "yourself).\n\n"
                 + result["output"][-4000:]
             ),
         }
+
     return {"build": result, "status": "build_passed"}
 
 

@@ -153,6 +153,18 @@ class RepoWorkspace:
         output = self._git("diff", "--name-only", f"{base}...{branch}")
         return [line.strip() for line in output.splitlines() if line.strip()]
 
+    def preserve_and_checkout(self, base_branch: str, message: str) -> str | None:
+        """Commit whatever's staged on the current branch (if anything) so a
+        failed or unverified attempt stays on disk and inspectable - e.g. to
+        open in Visual Studio and build it yourself - then return to
+        `base_branch`. Unlike `abandon`, the branch is never deleted."""
+        self.stage_all()
+        sha = None
+        if self.staged_diff().strip():
+            sha = self.commit(message)
+        self.checkout(base_branch)
+        return sha
+
     def abandon(self, base_branch: str, branch: str | None = None) -> None:
         """Throw away a failed attempt and go back to where we started."""
         self._git("reset", "--hard")

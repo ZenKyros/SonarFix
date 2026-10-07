@@ -197,8 +197,17 @@ export default function BatchPage() {
         <section className="card">
           <div className="approval">
             <div className="banner banner-error">
-              ❌ Build failed — the fix does not compile. The branch was discarded.
+              {batch.build_status === "skipped"
+                ? "⚠️ Build could not be verified — no matching project was found, or no build tool is available here. This is NOT a pass."
+                : "❌ Build failed — the fix does not compile."}
             </div>
+            {batch.branch && (
+              <p className="caption">
+                The attempt is kept on branch <code>{batch.branch}</code> —
+                nothing was discarded. Open it yourself (e.g. in Visual
+                Studio) to double-check.
+              </p>
+            )}
             {batch.build_output && (
               <details className="disclosure" open>
                 <summary>Build output</summary>
