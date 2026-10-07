@@ -262,6 +262,21 @@ def _render_fix(state: dict[str, Any]) -> None:
     if state.get("commit_sha"):
         st.caption(f"Commit {state['commit_sha']}")
 
+    run = state.get("run") or {}
+    build_status = run.get("build_status")
+    build_output = run.get("build_output")
+    if build_status:
+        st.markdown("**Build verification (C#/.NET only, informational)**")
+        if build_status == "passed":
+            st.success("Build passed.")
+        elif build_status == "failed":
+            st.error("Build failed - review before pushing.")
+        else:
+            st.info("Build not verified for this change.")
+        if build_output:
+            with st.expander("Build output"):
+                st.code(build_output, language=None)
+
     if fix.get("changes_summary"):
         st.markdown("**What changed**")
         st.write(fix["changes_summary"])
@@ -271,7 +286,6 @@ def _render_fix(state: dict[str, Any]) -> None:
         st.code(state["diff"], language="diff")
 
     pr = state.get("pr") or {}
-    run = state.get("run") or {}
     commit_message = pr.get("commit_message") or run.get("commit_message")
     pr_description = run.get("pr_description")
     if pr and not pr_description:

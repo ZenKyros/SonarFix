@@ -395,8 +395,10 @@ def onboard_project(
 def create_pull_request(issue_id: str) -> dict[str, Any]:
     """Push the committed fix branch for one issue and open a Bitbucket PR.
 
-    Only reachable once the fix has been applied AND the local build passed -
-    `decide()` never marks a run 'applied' when `verify_build` failed.
+    Only reachable once the fix has been committed (`run.status == "applied"`).
+    The build result is informational only and does not gate this - a run can
+    be 'applied' with a failed, skipped, or unverified build; see
+    `run.build_status` / `run.build_output`.
     """
     from . import scm
 

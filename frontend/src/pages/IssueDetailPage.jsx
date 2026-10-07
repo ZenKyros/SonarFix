@@ -247,7 +247,7 @@ export default function IssueDetailPage() {
 
       {(state.awaiting_build ||
         state.awaiting_build_feedback ||
-        ["applied", "failed", "fix_generated", "build_passed", "retrying"].includes(
+        ["applied", "failed", "fix_generated", "build_checked", "retrying"].includes(
           state.status
         )) && (
         <FixSection
@@ -321,8 +321,9 @@ function FixSection({
       {state.awaiting_build && (
         <div className="approval">
           <p>
-            <strong>Ready to build.</strong> Nothing is pushed or proposed as a
-            pull request until the build passes.
+            <strong>Ready to build.</strong> Build verification covers C#/.NET
+            projects today (other languages coming soon) and is informational
+            only — you can still generate a pull request either way.
           </p>
           <div className="button-row">
             <button className="btn btn-primary" onClick={onBuild} disabled={busy === "build"}>
@@ -335,9 +336,7 @@ function FixSection({
       {state.awaiting_build_feedback && (
         <div className="approval">
           <div className="banner banner-error">
-            {run.build_status === "skipped"
-              ? "⚠️ Build could not be verified — no matching project was found, or no build tool is available here. This is NOT a pass."
-              : "❌ Build failed — the fix does not compile."}
+            {state.error || "The fix could not be generated."}
           </div>
           {state.branch && (
             <p className="caption">
@@ -348,19 +347,11 @@ function FixSection({
                   in <code>{repoPath}</code>
                 </>
               ) : null}{" "}
-              — nothing was discarded. Open it yourself (e.g. in Visual
-              Studio) to double-check.
+              — nothing was discarded. Open it yourself to double-check.
             </p>
           )}
-          {run.build_output && (
-            <details className="disclosure" open>
-              <summary>Build output</summary>
-              <pre className="code-block">{run.build_output}</pre>
-            </details>
-          )}
           <p>
-            <strong>Tell the AI what to do differently</strong>, then try again —
-            it will see this build's error output automatically either way.
+            <strong>Tell the AI what to do differently</strong>, then try again.
           </p>
           <textarea
             className="textarea"
@@ -390,10 +381,18 @@ function FixSection({
           ✅ Build successful — the fix compiles cleanly.
         </div>
       )}
-      {buildStatus === "skipped" && (
-        <div className="banner banner-warn">Build verification skipped: {run.build_output}</div>
+      {buildStatus === "failed" && (
+        <div className="banner banner-error">
+          ❌ Build failed — the fix does not compile. Informational only: you
+          can still generate a pull request and fix it afterward.
+        </div>
       )}
-      {buildStatus && buildStatus !== "failed" && run.build_output && (
+      {buildStatus === "skipped" && (
+        <div className="banner banner-warn">
+          ⚠️ Build not verified: {run.build_output}
+        </div>
+      )}
+      {buildStatus && run.build_output && (
         <details className="disclosure">
           <summary>Build output</summary>
           <pre className="code-block">{run.build_output}</pre>

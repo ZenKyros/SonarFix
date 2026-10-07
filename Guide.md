@@ -133,7 +133,10 @@ reports which AI engine/model is wired up.
 1. **Projects page** → "Start a new project" panel → paste the SonarQube
    **Project** URL and the repo URL → Fetch issues.
 2. Pick an issue → **Analyze with AI** → review the plan → **Approve**.
-3. Watch the status: `applying` → `build_passed`/`failed` → `applied`.
+3. Watch the status: `applying` → `build_checked` → `applied`. The build
+   result (pass/fail/skipped) is shown for information only — it does not
+   block the next step. Non-C# changes are flagged as "not built yet"
+   instead of being silently ignored.
    - If it fails and the error mentions `MSB3644` or "missing NuGet package",
      that's a local toolchain gap on your machine, not a bad fix — see
      Prerequisites above.
@@ -176,7 +179,9 @@ single-issue fix workflow is a LangGraph state machine in
 src/sonarfix/core/graph.py: load_context -> analyze -> await_approval
 (interrupts for human approval) -> apply_fix -> verify_build -> finalize.
 verify_build (src/sonarfix/core/build.py) builds the fix's blast radius
-before any PR is allowed; a failed build auto-discards the branch.
+(C#/.NET only today; other languages reported as "not built yet") and
+records pass/fail/skipped purely for information - it never blocks PR
+creation, and the branch is never auto-discarded on a failed build.
 Batch (multi-issue) fixes go through src/sonarfix/core/batch.py instead,
 which does NOT yet have build verification wired in - ask before assuming
 it does.

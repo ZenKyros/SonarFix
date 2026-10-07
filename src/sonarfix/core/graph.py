@@ -1,15 +1,17 @@
 """The remediation workflow as a LangGraph state machine.
 
     load_context -> analyze -> await_approval -.-> apply_fix -> await_build -> verify_build -> finalize -.-> END (applied)
-                                               '-> (rejected) END                                        '-> await_build_feedback -.-> apply_fix (retry, loop)
-                                                                                                                              '-> (give up) END
+                                               '-> (rejected) END                                                      '-> await_build_feedback -.-> apply_fix (retry, loop)
+                                                                                                                                                '-> (give up) END
 
-Both `await_approval` and `await_build`/`await_build_feedback` call
-`interrupt()`, so the run parks in the SQLite checkpointer until a human
-acts: approve/reject the plan, trigger the build explicitly (it never runs
-automatically), and on a failed build, either retry with feedback or give up.
-That is what lets the API be request/response and the UI re-render freely
-without losing a run.
+Both `await_approval` and `await_build` call `interrupt()`, so the run parks
+in the SQLite checkpointer until a human acts: approve/reject the plan, or
+trigger the build explicitly (it never runs automatically). The build result
+is informational only - pass, fail, or skipped (e.g. a non-C# change) - and
+never blocks `finalize` from committing and handing back a PR; it is just
+recorded next to the diff for the reviewer. `await_build_feedback` only
+fires when `apply_fix` itself failed (dirty tree, agent crash, no changes),
+offering a retry with feedback or giving up.
 """
 
 from __future__ import annotations
@@ -379,57 +381,19 @@ def await_build(state: FixState) -> dict[str, Any]:
 
 
 def verify_build(state: FixState) -> dict[str, Any]:
-    """Build the blast radius of the fix before it is ever offered as a PR.
+    """Build the blast radius of the fix, purely for information.
 
-    A "skipped" result (no .csproj owned the changed files, or no build tool
-    is on this machine) means the build was never actually checked - that is
-    NOT the same as a pass, and must not finalize as one. Both that case and
-    a real compile failure park at await_build_feedback for a human decision;
-    neither one deletes the branch, so the attempt stays on disk to inspect
-    or build yourself (e.g. in Visual Studio) either way.
+    The result (passed/failed/skipped - e.g. a non-C# change, or no build
+    tool on this machine) is recorded alongside the diff but never blocks the
+    fix from being committed and offered as a PR; it is the reviewer's call.
+    `build.verify` already folds in a note when some changed files are in a
+    language that is not built yet.
     """
     if state.get("status") != "fix_generated":
         return {}  # apply_fix already failed - nothing staged to build
 
     result = build.verify(state["repo_path"], state.get("changed_files") or [])
-    branch = state.get("branch")
-    repo_path = state["repo_path"]
-
-    if result["status"] == "skipped":
-        workspace = RepoWorkspace(repo_path)
-        workspace.preserve_and_checkout(
-            state["base_branch"], f"SonarFix (build not verified): {state['issue'].get('message', '')[:80]}"
-        )
-        return {
-            "build": result,
-            "status": "failed",
-            "error": (
-                "Build could NOT be verified - no matching project was found, or "
-                "no build tool is available on this machine. This is not a pass; "
-                f"the fix is preserved on branch `{branch}` in {repo_path} so you "
-                "can check it yourself (e.g. open it in Visual Studio and build it).\n\n"
-                + result["output"]
-            ),
-        }
-
-    if not result["success"]:
-        workspace = RepoWorkspace(repo_path)
-        workspace.preserve_and_checkout(
-            state["base_branch"], f"SonarFix (build failed): {state['issue'].get('message', '')[:80]}"
-        )
-        return {
-            "build": result,
-            "status": "failed",
-            "error": (
-                "Build verification failed - the fix does not compile. The "
-                f"attempt is preserved on branch `{branch}` in {repo_path} if you "
-                "want to inspect it (e.g. open it in Visual Studio and build it "
-                "yourself).\n\n"
-                + result["output"][-4000:]
-            ),
-        }
-
-    return {"build": result, "status": "build_passed"}
+    return {"build": result, "status": "build_checked"}
 
 
 def finalize(state: FixState) -> dict[str, Any]:

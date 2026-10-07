@@ -60,42 +60,62 @@ def _is_sdk_style(csproj: Path) -> bool:
     return "Sdk=" in head
 
 
+def _unsupported_note(unsupported: list[str]) -> str:
+    return (
+        "Build verification currently covers C#/.NET projects only. "
+        f"{len(unsupported)} changed file(s) are in another language and were "
+        f"not built (support for other languages is coming soon): {', '.join(unsupported)}"
+    )
+
+
 def verify(repo_path: str, changed_files: list[str]) -> dict[str, Any]:
-    """Build every project the changed files belong to.
+    """Build every C#/.NET project the changed files belong to.
+
+    This never blocks the fix from being offered as a PR - it is purely
+    informational. Files that are not owned by a .csproj/.vbproj (a
+    different language) are reported back as `unsupported_files` with a note
+    instead of being silently ignored.
 
     Returns {"status": "passed"|"failed"|"skipped", "success": bool,
-    "output": str, "projects": [str]} - shaped so it can be stored and shown
-    to the user directly.
+    "output": str, "projects": [str], "unsupported_files": [str]} - shaped so
+    it can be stored and shown to the user directly.
     """
     settings = get_settings()
     if not settings.build_enabled:
         return {
             "status": "skipped", "success": True,
             "output": "Build verification is disabled (SONARFIX_BUILD_ENABLED=false).",
-            "projects": [],
+            "projects": [], "unsupported_files": [],
         }
 
     root = Path(repo_path).resolve()
     projects: dict[str, Path] = {}
+    unsupported: list[str] = []
     for file_path in changed_files:
         csproj = _csproj_for(root, file_path)
         if csproj:
             projects[str(csproj)] = csproj
+        else:
+            unsupported.append(file_path)
+
+    note = _unsupported_note(unsupported) if unsupported else ""
 
     if not projects:
+        output = note or "No .csproj/.vbproj owns the changed files; nothing to build."
         return {
-            "status": "skipped", "success": True,
-            "output": "No .csproj/.vbproj owns the changed files; nothing to build.",
-            "projects": [],
+            "status": "skipped", "success": True, "output": output,
+            "projects": [], "unsupported_files": unsupported,
         }
 
     dotnet = shutil.which("dotnet")
     msbuild = _find_msbuild()
     if not dotnet and not msbuild:
+        output = "Neither 'dotnet' nor MSBuild.exe is on PATH; skipping build verification."
+        if note:
+            output += f"\n\n{note}"
         return {
-            "status": "skipped", "success": True,
-            "output": "Neither 'dotnet' nor MSBuild.exe is on PATH; skipping build verification.",
-            "projects": [str(p) for p in projects.values()],
+            "status": "skipped", "success": True, "output": output,
+            "projects": [str(p) for p in projects.values()], "unsupported_files": unsupported,
         }
 
     logs: list[str] = []
@@ -109,9 +129,10 @@ def verify(repo_path: str, changed_files: list[str]) -> dict[str, Any]:
             tool, args = dotnet, ["build", str(csproj), "--nologo", "-v", "minimal"]
         else:
             logs.append(f"### {rel}\nLegacy project format needs MSBuild, which is not installed.")
+            output = "\n\n".join(logs) + (f"\n\n{note}" if note else "")
             return {
-                "status": "failed", "success": False, "output": "\n\n".join(logs),
-                "projects": [str(p) for p in projects.values()],
+                "status": "failed", "success": False, "output": output,
+                "projects": [str(p) for p in projects.values()], "unsupported_files": unsupported,
             }
 
         start = time.monotonic()
@@ -122,9 +143,10 @@ def verify(repo_path: str, changed_files: list[str]) -> dict[str, Any]:
             )
         except subprocess.TimeoutExpired:
             logs.append(f"### {rel}\nTimed out after {settings.build_timeout}s.")
+            output = "\n\n".join(logs) + (f"\n\n{note}" if note else "")
             return {
-                "status": "failed", "success": False, "output": "\n\n".join(logs),
-                "projects": [str(p) for p in projects.values()],
+                "status": "failed", "success": False, "output": output,
+                "projects": [str(p) for p in projects.values()], "unsupported_files": unsupported,
             }
 
         duration = time.monotonic() - start
@@ -134,12 +156,14 @@ def verify(repo_path: str, changed_files: list[str]) -> dict[str, Any]:
         logs.append(f"### {rel} ({duration:.1f}s)\n{tail.strip()}")
 
         if result.returncode != 0:
+            output = "\n\n".join(logs) + (f"\n\n{note}" if note else "")
             return {
-                "status": "failed", "success": False, "output": "\n\n".join(logs),
-                "projects": [str(p) for p in projects.values()],
+                "status": "failed", "success": False, "output": output,
+                "projects": [str(p) for p in projects.values()], "unsupported_files": unsupported,
             }
 
+    output = "\n\n".join(logs) + (f"\n\n{note}" if note else "")
     return {
-        "status": "passed", "success": True, "output": "\n\n".join(logs),
-        "projects": [str(p) for p in projects.values()],
+        "status": "passed", "success": True, "output": output,
+        "projects": [str(p) for p in projects.values()], "unsupported_files": unsupported,
     }
