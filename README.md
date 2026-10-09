@@ -1,6 +1,3 @@
-# SonarFix — AI-Assisted Code Remediation
-
- SonarFix is an autonomous code remediation system that analyzes SonarQube findings, generates AI-powered fixes, and creates pull requests. It's designed for large .NET monorepos with cost optimization and human-in-the-loop approval gates.
 
 **Key features:**
 - 🔍 Issues clustered by pattern (one AI analysis per group, not per issue)
