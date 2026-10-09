@@ -49,6 +49,8 @@ async function request(method, path, { json, params } = {}) {
 
 export const api = {
   health: () => request("GET", "/health"),
+  getModelSettings: () => request("GET", "/settings/model"),
+  setModel: (model) => request("POST", "/settings/model", { json: { model } }),
 
   listProjects: () => request("GET", "/projects"),
   syncProjects: () => request("POST", "/projects/sync"),

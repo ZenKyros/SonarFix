@@ -24,19 +24,20 @@ _GIT_FALLBACKS = (
 
 
 def branch_prefix() -> str:
-    """`sonarfix-<user>`, so a branch shows who ran the tool.
+    """Just the Bitbucket username, so a branch name is short and shows who ran the tool.
 
-    SONARFIX_USER wins, then BITBUCKET_USERNAME, then the OS login.
+    BITBUCKET_USERNAME wins (that's the account the PR gets opened as), then
+    SONARFIX_USER, then the OS login.
     """
     user = (
-        os.environ.get("SONARFIX_USER")
-        or os.environ.get("BITBUCKET_USERNAME")
+        os.environ.get("BITBUCKET_USERNAME")
+        or os.environ.get("SONARFIX_USER")
         or os.environ.get("USERNAME")
         or os.environ.get("USER")
         or ""
     )
     user = _SLUG_RE.sub("-", user.strip()).strip("-.").lower()
-    return f"sonarfix-{user}" if user else "sonarfix"
+    return user or "sonarfix"
 
 
 def ensure_git_on_path() -> None:

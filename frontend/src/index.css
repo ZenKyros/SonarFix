@@ -1,23 +1,23 @@
 :root {
-  /* Unisys brand: deep navy + "Unisys Blue" accent. */
-  --navy: #0a1f44;
-  --navy-soft: #142b57;
-  --bg: #f4f6fa;
+  /* Unisys brand colors: Dark Teal + Propel Mint */
+  --navy: #003134;
+  --navy-soft: #1a4f52;
+  --bg: #f8fafa;
   --surface: #ffffff;
-  --border: #dde2ea;
-  --border-soft: #edf0f5;
-  --text: #16213f;
-  --text-muted: #5b6579;
-  --text-faint: #8c93a3;
-  --accent: #0047bb;
-  --accent-hover: #003a99;
-  --accent-soft: #e8f0fd;
+  --border: #003134;
+  --border-soft: #b3bfbf;
+  --text: #000000;
+  --text-muted: #2c2c2c;
+  --text-faint: #666666;
+  --accent: #00E28B;
+  --accent-hover: #00c876;
+  --accent-soft: #d4f8ec;
   --danger: #c4293a;
   --danger-soft: #fbe4e6;
-  --success: #0a7a4a;
-  --success-soft: #dcf4e7;
-  --warn: #946200;
-  --warn-soft: #fdedcf;
+  --success: #00E28B;
+  --success-soft: #d4f8ec;
+  --warn: #ff9800;
+  --warn-soft: #ffe0b2;
   --radius: 10px;
   --radius-sm: 7px;
   --font: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -88,6 +88,13 @@ button, input, select, textarea {
   letter-spacing: 0.01em;
 }
 
+.brand-logo {
+  height: 40px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+}
+
 .brand-text {
   display: flex;
   flex-direction: column;
@@ -99,7 +106,7 @@ button, input, select, textarea {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #9fb4e0;
+  color: #00E28B;
 }
 
 .brand-text .brand-product {
@@ -261,7 +268,7 @@ button, input, select, textarea {
 }
 
 .btn:hover:not(:disabled) {
-  border-color: #c9cdd4;
+  border-color: var(--border);
   background: #fafbfc;
 }
 
@@ -273,22 +280,25 @@ button, input, select, textarea {
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: #000000;
+  font-weight: 600;
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
+  color: #000000;
 }
 
 .btn-outline {
   background: transparent;
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--border);
+  color: #000000;
 }
 
 .btn-outline:hover:not(:disabled) {
   background: var(--accent-soft);
+  color: #000000;
 }
 
 .button-row {
@@ -677,3 +687,94 @@ button, input, select, textarea {
   font-size: 0.76rem;
   color: var(--text-faint);
 }
+
+/* --- model picker -------------------------------------------------------- */
+
+.model-picker {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #cfe0fa;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.model-picker option {
+  color: var(--text);
+}
+
+/* --- page tabs (e.g. Open / PR Created) ----------------------------------- */
+
+.page-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.page-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 10px 6px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.page-tab:hover { color: var(--text); }
+
+.page-tab.active {
+  color: var(--navy);
+  border-bottom-color: var(--accent);
+}
+
+/* --- build/test status badges --------------------------------------------- */
+
+.status-badge-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.status-badge-icon { font-size: 0.9rem; }
+
+.status-badge-pass { background: var(--success-soft); color: #007a4d; }
+.status-badge-fail { background: var(--danger-soft); color: #a3231f; }
+.status-badge-skip { background: var(--warn-soft); color: var(--warn); }
+
+/* --- "PR created" marker --------------------------------------------------- */
+
+.pr-created-banner { align-items: flex-start; }
+
+.pr-created-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  background: var(--success);
+  color: #00301f;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.issue-row.has-pr { background: var(--success-soft); }

@@ -197,6 +197,7 @@ def status(repo_path: str | Path | None) -> dict[str, object]:
         "reason": reason,
         "provider": f"bitbucket-{repo.kind}" if repo else None,
         "repository": repo.label if repo else None,
+        "username": settings.bitbucket_username or _repo.branch_prefix(),
     }
 
 

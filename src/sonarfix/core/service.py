@@ -135,8 +135,19 @@ def ensure_repo(
 def list_issues(
     project_key: str, severity: str | None = None, issue_type: str | None = None
 ) -> list[dict[str, Any]]:
-    """Live from SonarQube every time - never a local cache that can go stale."""
-    return issues_.filter_and_sort(issues_.fetch_many(project_key), severity, issue_type)
+    """Live from SonarQube every time - never a local cache that can go stale.
+
+    Each issue is stamped with `pr_url`/`has_pr` from our own local history,
+    so the UI can set aside anything that already has an open PR instead of
+    re-analysing it.
+    """
+    issues = issues_.filter_and_sort(issues_.fetch_many(project_key), severity, issue_type)
+    pr_status = store.pr_status_by_issue(project_key)
+    for issue in issues:
+        found = pr_status.get(issue["id"])
+        issue["pr_url"] = found["pr_url"] if found else None
+        issue["has_pr"] = bool(found)
+    return issues
 
 
 def issue_facets(project_key: str) -> dict[str, list[str]]:

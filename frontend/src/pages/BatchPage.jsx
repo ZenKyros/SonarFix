@@ -4,6 +4,7 @@ import { api, ApiError } from "../api";
 import DiffBlock from "../components/DiffBlock";
 import ErrorBanner from "../components/ErrorBanner";
 import Stepper from "../components/Stepper";
+import BuildStatusBadge from "../components/BuildStatusBadge";
 import { useStatus } from "../status";
 
 const ACTIVE = new Set(["queued", "running"]);
@@ -196,10 +197,14 @@ export default function BatchPage() {
       {batch.status === "build_failed" && (
         <section className="card">
           <div className="approval">
+            <div className="status-badge-row">
+              <BuildStatusBadge status={batch.build_status} kind="Build" />
+              <BuildStatusBadge status={batch.test_status} kind="Test" />
+            </div>
             <div className="banner banner-error">
               {batch.build_status === "skipped"
-                ? "⚠️ Build could not be verified — no matching project was found, or no build tool is available here. This is NOT a pass."
-                : "❌ Build failed — the fix does not compile."}
+                ? "Build could not be verified — no matching project was found, or no build tool is available here. This is NOT a pass."
+                : "Build failed — the fix does not compile."}
             </div>
             {batch.branch && (
               <p className="caption">
@@ -243,20 +248,25 @@ export default function BatchPage() {
             <h2>Pull request</h2>
             {scm?.provider && <span className="chip">{scm.provider} · {scm.repository}</span>}
           </div>
-          {batch.build_status === "passed" && (
-            <div className="banner banner-success">
-              ✅ Build successful — the fix compiles cleanly.
+          {(batch.build_status || batch.test_status) && (
+            <div className="status-badge-row">
+              <BuildStatusBadge status={batch.build_status} kind="Build" />
+              <BuildStatusBadge status={batch.test_status} kind="Test" />
             </div>
           )}
           {batch.build_status === "skipped" && (
             <div className="banner banner-warn">Build verification skipped: {batch.build_output}</div>
           )}
           {batch.status === "pr_open" ? (
-            <div className="banner banner-success">
-              Pull request opened —{" "}
-              <a href={batch.pr_url} target="_blank" rel="noreferrer">
-                {batch.pr_url}
-              </a>
+            <div className="banner banner-success pr-created-banner">
+              <span className="pr-created-tag">✓ PR created</span>
+              <span>
+                {" "}
+                —{" "}
+                <a href={batch.pr_url} target="_blank" rel="noreferrer">
+                  {batch.pr_url}
+                </a>
+              </span>
             </div>
           ) : (
             <>
@@ -269,7 +279,7 @@ export default function BatchPage() {
               )}
               <div className="button-row">
                 <button className="btn btn-primary" onClick={publish} disabled={publishing || !scm?.ready}>
-                  {publishing ? "Pushing…" : "Create Bitbucket PR"}
+                  {publishing ? "Pushing…" : `Send PR as ${scm?.username || "me"}`}
                 </button>
               </div>
             </>

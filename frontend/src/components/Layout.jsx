@@ -15,6 +15,8 @@ function shortEngineLabel(wiring) {
 export default function Layout({ children }) {
   const [wiring, setWiring] = useState(null);
   const [ok, setOk] = useState(true);
+  const [modelInfo, setModelInfo] = useState(null);
+  const [switching, setSwitching] = useState(false);
 
   useEffect(() => {
     api
@@ -27,18 +29,46 @@ export default function Layout({ children }) {
         setWiring(null);
         setOk(false);
       });
+    api.getModelSettings().then(setModelInfo).catch(() => {});
   }, []);
+
+  const handleModelChange = async (e) => {
+    const model = e.target.value;
+    setSwitching(true);
+    try {
+      const res = await api.setModel(model);
+      setModelInfo((prev) => ({ ...prev, model: res.model }));
+    } catch {
+      // Leave the dropdown as-is; the next health/model check will resync it.
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   return (
     <div className="shell">
       <header className="topbar">
         <Link to="/" className="brand">
-          <span className="brand-mark">U</span>
+          <img src="/Logo.webp" alt="Unisys" className="brand-logo" />
           <span className="brand-text">
-            <span className="brand-org">Unisys</span>
             <span className="brand-product">SonarFix</span>
           </span>
         </Link>
+        {modelInfo?.choices?.length > 0 && (
+          <select
+            className="model-picker"
+            value={modelInfo.model}
+            onChange={handleModelChange}
+            disabled={switching}
+            title="Claude model used for new analysis and fix sessions"
+          >
+            {modelInfo.choices.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        )}
         {wiring && (
           <span
             className={`status-pill ${ok ? "status-ok" : "status-bad"}`}

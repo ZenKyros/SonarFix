@@ -5,6 +5,7 @@ import SeverityBadge from "../components/SeverityBadge";
 import ConfidenceBar from "../components/ConfidenceBar";
 import ErrorBanner from "../components/ErrorBanner";
 import DiffBlock from "../components/DiffBlock";
+import BuildStatusBadge from "../components/BuildStatusBadge";
 import { useStatus } from "../status";
 
 export default function IssueDetailPage() {
@@ -14,6 +15,7 @@ export default function IssueDetailPage() {
 
   const [detail, setDetail] = useState(null);
   const [state, setState] = useState(null);
+  const [scm, setScm] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null);
   const [feedback, setFeedback] = useState("");
@@ -28,6 +30,9 @@ export default function IssueDetailPage() {
     ]);
     setDetail(d);
     setState(s);
+    if (d.project?.key) {
+      api.scmStatus(d.project.key).then(setScm).catch(() => {});
+    }
   };
 
   useEffect(() => {
@@ -253,6 +258,7 @@ export default function IssueDetailPage() {
         <FixSection
           state={state}
           busy={busy}
+          scm={scm}
           repoPath={detail.project?.repo_path}
           buildFeedback={buildFeedback}
           onBuildFeedbackChange={setBuildFeedback}
@@ -281,6 +287,7 @@ export default function IssueDetailPage() {
 function FixSection({
   state,
   busy,
+  scm,
   repoPath,
   buildFeedback,
   onBuildFeedbackChange,
@@ -321,8 +328,8 @@ function FixSection({
       {state.awaiting_build && (
         <div className="approval">
           <p>
-            <strong>Ready to build.</strong> Build verification covers C#/.NET
-            projects today (other languages coming soon) and is informational
+            <strong>Ready to build.</strong> Build and test verification
+            covers C#/.NET, Maven and Gradle projects and is informational
             only — you can still generate a pull request either way.
           </p>
           <div className="button-row">
@@ -376,26 +383,37 @@ function FixSection({
         </div>
       )}
 
-      {buildStatus === "passed" && (
-        <div className="banner banner-success">
-          ✅ Build successful — the fix compiles cleanly.
+      {(buildStatus || run.test_status) && (
+        <div className="status-badge-row">
+          <BuildStatusBadge status={buildStatus} kind="Build" />
+          <BuildStatusBadge status={run.test_status} kind="Test" />
         </div>
       )}
       {buildStatus === "failed" && (
         <div className="banner banner-error">
-          ❌ Build failed — the fix does not compile. Informational only: you
+          Build failed — the fix does not compile. Informational only: you
           can still generate a pull request and fix it afterward.
         </div>
       )}
       {buildStatus === "skipped" && (
-        <div className="banner banner-warn">
-          ⚠️ Build not verified: {run.build_output}
+        <div className="banner banner-warn">Build not verified: {run.build_output}</div>
+      )}
+      {run.test_status === "failed" && (
+        <div className="banner banner-error">
+          Tests failed — the fix broke an existing test. Informational only:
+          you can still generate a pull request and fix it afterward.
         </div>
       )}
       {buildStatus && run.build_output && (
         <details className="disclosure">
           <summary>Build output</summary>
           <pre className="code-block">{run.build_output}</pre>
+        </details>
+      )}
+      {run.test_output && (
+        <details className="disclosure">
+          <summary>Test output</summary>
+          <pre className="code-block">{run.test_output}</pre>
         </details>
       )}
 
@@ -423,18 +441,22 @@ function FixSection({
       )}
 
       {run.pr_url ? (
-        <div className="banner banner-success">
-          Pull request opened:{" "}
-          <a href={run.pr_url} target="_blank" rel="noreferrer">
-            {run.pr_url}
-          </a>
+        <div className="banner banner-success pr-created-banner">
+          <span className="pr-created-tag">✓ PR created</span>
+          <span>
+            {" "}
+            — this issue is handled, no need to re-analyze it.{" "}
+            <a href={run.pr_url} target="_blank" rel="noreferrer">
+              {run.pr_url}
+            </a>
+          </span>
         </div>
       ) : (
         state.status === "applied" && (
           <>
             <div className="button-row">
               <button className="btn btn-primary" onClick={onCreatePr} disabled={busy === "createPr"}>
-                {busy === "createPr" ? "Opening pull request…" : "Generate pull request on Bitbucket"}
+                {busy === "createPr" ? "Opening pull request…" : `Send PR as ${scm?.username || "me"}`}
               </button>
             </div>
             {state.branch && (

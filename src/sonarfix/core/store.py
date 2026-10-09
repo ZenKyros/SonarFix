@@ -75,6 +75,8 @@ CREATE TABLE IF NOT EXISTS fix_runs (
     testing_suggestions TEXT,
     build_status        TEXT,
     build_output        TEXT,
+    test_status         TEXT,
+    test_output         TEXT,
     status              TEXT,
     error               TEXT,
     created_at          TEXT
@@ -96,6 +98,8 @@ CREATE TABLE IF NOT EXISTS batches (
     pr_url        TEXT,
     build_status  TEXT,
     build_output  TEXT,
+    test_status   TEXT,
+    test_output   TEXT,
     retry_of      INTEGER,
     error         TEXT,
     created_at    TEXT,
@@ -134,11 +138,15 @@ _FIX_RUNS_MIGRATIONS = (
     "ALTER TABLE fix_runs ADD COLUMN pr_url TEXT",
     "ALTER TABLE fix_runs ADD COLUMN build_status TEXT",
     "ALTER TABLE fix_runs ADD COLUMN build_output TEXT",
+    "ALTER TABLE fix_runs ADD COLUMN test_status TEXT",
+    "ALTER TABLE fix_runs ADD COLUMN test_output TEXT",
 )
 
 _BATCHES_MIGRATIONS = (
     "ALTER TABLE batches ADD COLUMN build_status TEXT",
     "ALTER TABLE batches ADD COLUMN build_output TEXT",
+    "ALTER TABLE batches ADD COLUMN test_status TEXT",
+    "ALTER TABLE batches ADD COLUMN test_output TEXT",
     "ALTER TABLE batches ADD COLUMN retry_of INTEGER",
 )
 
@@ -357,6 +365,25 @@ def get_issue(issue_id: str) -> dict[str, Any] | None:
         return dict(row) if row else None
 
 
+def pr_status_by_issue(project_key: str) -> dict[str, dict[str, Any]]:
+    """Latest fix_run with an open PR for each issue in this project, keyed by
+    issue_id - lets the UI mark an issue "PR created" without re-analysing it."""
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT p.issue_id AS issue_id, r.pr_url AS pr_url, r.branch AS branch,
+                   r.status AS run_status, r.created_at AS created_at
+            FROM fix_runs r
+            JOIN fix_plans p ON p.id = r.plan_id
+            WHERE p.project_key = ? AND r.pr_url IS NOT NULL AND r.pr_url != ''
+            ORDER BY r.created_at ASC
+            """,
+            (project_key,),
+        ).fetchall()
+    # Rows are in ascending created_at order, so the last write per issue_id wins.
+    return {row["issue_id"]: dict(row) for row in rows}
+
+
 def issue_facets(project_key: str) -> dict[str, list[str]]:
     """Distinct severities and types present, for the UI filters."""
     with connect() as conn:
@@ -450,8 +477,8 @@ def create_run(plan_id: int, fields: dict[str, Any]) -> int:
             "INSERT INTO fix_runs "
             "(plan_id, branch, base_branch, diff, changes_summary, commit_message, "
             " pr_title, pr_description, testing_suggestions, build_status, "
-            " build_output, status, error, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " build_output, test_status, test_output, status, error, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 plan_id,
                 fields.get("branch"),
@@ -464,6 +491,8 @@ def create_run(plan_id: int, fields: dict[str, Any]) -> int:
                 fields.get("testing_suggestions"),
                 fields.get("build_status"),
                 fields.get("build_output"),
+                fields.get("test_status"),
+                fields.get("test_output"),
                 fields.get("status", "generated"),
                 fields.get("error"),
                 now(),

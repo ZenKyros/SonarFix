@@ -22,6 +22,34 @@ ENGINES = ("deepagents", "claude-code")
 # How the SonarQube MCP server is reached, if at all.
 MCP_MODES = ("off", "stdio", "http")
 
+# Claude models selectable from the UI, in order shown there. Keyed by the
+# exact model id the Anthropic API expects; the label is cosmetic.
+CLAUDE_MODELS: dict[str, str] = {
+    "claude-opus-5-5": "Opus 5.5 (deepest reasoning, slowest)",
+    "claude-sonnet-5-5": "Sonnet 5.5 (balanced, recommended)",
+    "claude-haiku-4-5-20251001": "Haiku 4.5 (fastest, lighter fixes)",
+}
+
+# A runtime model choice from the UI persists here, overriding SONARFIX_MODEL
+# until changed again - so it survives a backend restart without editing .env.
+_MODEL_OVERRIDE_FILE = PROJECT_ROOT / "data" / "model_override.txt"
+
+
+def get_model_override() -> str:
+    try:
+        return _MODEL_OVERRIDE_FILE.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+def set_model_override(model: str) -> None:
+    """Persist the UI's model choice and make `get_settings()` pick it up."""
+    if model not in CLAUDE_MODELS:
+        raise ConfigError(f"Unknown model: {model!r}. Choose one of: {', '.join(CLAUDE_MODELS)}.")
+    _MODEL_OVERRIDE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _MODEL_OVERRIDE_FILE.write_text(model, encoding="utf-8")
+    get_settings.cache_clear()
+
 
 class ConfigError(RuntimeError):
     """Raised when a required setting is missing or contradictory."""
@@ -206,12 +234,14 @@ def get_settings() -> Settings:
     sonar_token = os.environ.get("SONAR_TOKEN", "").strip()
     sonar_org = os.environ.get("SONAR_ORG", "").strip()
 
+    model_override = get_model_override() if provider == "anthropic" else ""
+
     return Settings(
         sonar_url=sonar_url,
         sonar_token=sonar_token,
         sonar_org=sonar_org,
         provider=provider,
-        model=(os.environ.get("SONARFIX_MODEL") or default_model).strip(),
+        model=(model_override or os.environ.get("SONARFIX_MODEL") or default_model).strip(),
         llm_base_url=(os.environ.get("SONARFIX_LLM_BASE_URL") or "").strip().rstrip("/"),
         llm_api_key=(os.environ.get("SONARFIX_LLM_API_KEY") or "").strip(),
         anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY", "").strip(),

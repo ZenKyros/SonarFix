@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from ..core import batch, engine, planner, report, scm, service, store
-from ..core.config import ConfigError
+from ..core.config import CLAUDE_MODELS, ConfigError, get_settings, set_model_override
 from ..core.repo import RepoError
 from ..core.service import ServiceError
 from ..core.sonar import SonarError
@@ -102,6 +102,10 @@ class BuildRetryBody(BaseModel):
     )
 
 
+class ModelBody(BaseModel):
+    model: str = Field(description="Claude model id to use for new AI sessions.")
+
+
 # --- routes ------------------------------------------------------------------
 
 
@@ -113,6 +117,23 @@ def health() -> dict[str, str]:
     except Exception as exc:  # noqa: BLE001 - health must never 500
         wiring = f"misconfigured: {exc}"
     return {"status": "ok", "engine": wiring}
+
+
+@app.get("/settings/model")
+def get_model_settings() -> dict[str, Any]:
+    """The active Claude model and the choices the UI's dropdown offers."""
+    settings = get_settings()
+    return {
+        "model": settings.model,
+        "provider": settings.provider,
+        "choices": [{"id": model_id, "label": label} for model_id, label in CLAUDE_MODELS.items()],
+    }
+
+
+@app.post("/settings/model")
+def post_model_settings(body: ModelBody) -> dict[str, Any]:
+    """Switch which Claude model new AI sessions use, from now on."""
+    return _guard(set_model_override, body.model) or get_model_settings()
 
 
 @app.get("/projects")

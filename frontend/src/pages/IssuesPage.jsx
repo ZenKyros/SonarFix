@@ -40,6 +40,7 @@ export default function IssuesPage() {
   const [query, setQuery] = useState("");
   const [view, setView] = useState("rules");
   const [open, setOpen] = useState({});
+  const [tab, setTab] = useState("open");
 
   const load = () =>
     api
@@ -78,17 +79,25 @@ export default function IssuesPage() {
     }
   };
 
+  const prCount = useMemo(() => issues.filter((i) => i.has_pr).length, [issues]);
+  const openCount = issues.length - prCount;
+
+  const tabIssues = useMemo(
+    () => issues.filter((i) => (tab === "pr" ? i.has_pr : !i.has_pr)),
+    [issues, tab]
+  );
+
   const counts = useMemo(() => {
     const c = {};
-    for (const i of issues) c[i.severity] = (c[i.severity] || 0) + 1;
+    for (const i of tabIssues) c[i.severity] = (c[i.severity] || 0) + 1;
     return c;
-  }, [issues]);
+  }, [tabIssues]);
 
-  const types = useMemo(() => [...new Set(issues.map((i) => i.type))].sort(), [issues]);
+  const types = useMemo(() => [...new Set(tabIssues.map((i) => i.type))].sort(), [tabIssues]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return issues
+    return tabIssues
       .filter((i) => severity === "All" || i.severity === severity)
       .filter((i) => type === "All" || i.type === type)
       .filter(
@@ -99,7 +108,7 @@ export default function IssuesPage() {
           (i.file_path || "").toLowerCase().includes(q)
       )
       .sort((a, b) => sevRank(a.severity) - sevRank(b.severity));
-  }, [issues, severity, type, query]);
+  }, [tabIssues, severity, type, query]);
 
   const groups = useMemo(() => {
     const byRule = new Map();
@@ -129,6 +138,15 @@ export default function IssuesPage() {
       </div>
 
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
+
+      <div className="page-tabs">
+        <button className={`page-tab ${tab === "open" ? "active" : ""}`} onClick={() => setTab("open")}>
+          Open <span className="count-pill">{openCount}</span>
+        </button>
+        <button className={`page-tab ${tab === "pr" ? "active" : ""}`} onClick={() => setTab("pr")}>
+          ✓ PR Created <span className="count-pill">{prCount}</span>
+        </button>
+      </div>
 
       <div className="sev-strip">
         <button
@@ -268,13 +286,14 @@ function IssueRow({ issue, showRule, fixKind }) {
   const file = (issue.file_path || "").split("/").pop();
   return (
     <li>
-      <Link to={`/issues/${issue.id}`} className="issue-row">
+      <Link to={`/issues/${issue.id}`} className={`issue-row ${issue.has_pr ? "has-pr" : ""}`}>
         {showRule && <SeverityBadge severity={issue.severity} />}
         <span className="issue-row-main">
           <span className="issue-row-msg">{issue.message}</span>
           {showRule && <code className="rule">{issue.rule}</code>}
         </span>
         {showRule && <FixTag kind={fixKind} />}
+        {issue.has_pr && <span className="pr-created-tag">✓ PR created</span>}
         <span className="loc" title={issue.file_path}>
           {file}
           {issue.line ? `:${issue.line}` : ""}

@@ -28,7 +28,7 @@ from langgraph.types import interrupt
 from . import build, engine, sonar, store
 from . import issues as issues_
 from .config import get_settings
-from .repo import RepoWorkspace, branch_prefix, slugify
+from .repo import RepoWorkspace, branch_prefix
 from .repo_profile import profile_for
 
 class FixState(TypedDict, total=False):
@@ -320,8 +320,7 @@ def apply_fix(state: FixState) -> dict[str, Any]:
             "base_branch": base_branch,
         }
 
-    rule_slug = slugify((state["issue"].get("rule") or "issue").replace(":", "-"))
-    branch = workspace.start_branch(f"{branch_prefix()}/{rule_slug}-{state['issue_id'][:8]}")
+    branch = workspace.start_branch(f"{branch_prefix()}-fix-{state['issue_id'][:8]}")
 
     try:
         fix = engine.run_fix(state["repo_path"], _fix_task(state))
@@ -412,6 +411,8 @@ def finalize(state: FixState) -> dict[str, Any]:
                 "error": state.get("error"),
                 "build_status": build_result.get("status"),
                 "build_output": build_result.get("output"),
+                "test_status": build_result.get("test_status"),
+                "test_output": build_result.get("test_output"),
             },
         )
         return {"run_id": run_id}
@@ -435,6 +436,8 @@ def finalize(state: FixState) -> dict[str, Any]:
             "testing_suggestions": fix.get("testing_suggestions"),
             "build_status": build_result.get("status"),
             "build_output": build_result.get("output"),
+            "test_status": build_result.get("test_status"),
+            "test_output": build_result.get("test_output"),
             "status": "applied",
         },
     )

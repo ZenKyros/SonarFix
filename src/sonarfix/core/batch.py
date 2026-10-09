@@ -178,7 +178,7 @@ def run(batch_id: int) -> None:
         ai_groups = [groups[g] for g in selection.get("ai", []) if g in groups]
 
         base = workspace.current_branch()
-        branch = workspace.start_branch(f"{branch_prefix()}/batch-{batch_id}")
+        branch = workspace.start_branch(f"{branch_prefix()}-batch-{batch_id}")
         store.update_batch(batch_id, base_branch=base, branch=branch)
 
         if mech_groups:
@@ -296,6 +296,7 @@ def request_build(batch_id: int) -> dict[str, Any]:
         store.update_batch(
             batch_id, status="build_failed",
             build_status=result["status"], build_output=f"{note}\n\n{result['output']}",
+            test_status=result.get("test_status"), test_output=result.get("test_output"),
         )
         return store.get_batch(batch_id) or {}
 
@@ -304,6 +305,7 @@ def request_build(batch_id: int) -> dict[str, Any]:
     store.update_batch(
         batch_id, status="ready", pr_title=title, pr_description=description,
         build_status=result["status"], build_output=result["output"],
+        test_status=result.get("test_status"), test_output=result.get("test_output"),
     )
     return store.get_batch(batch_id) or {}
 
@@ -445,7 +447,7 @@ def fix_single(issue_id: str, notes: str = "") -> dict[str, Any]:
         project_key, {"mechanical": [], "ai": [], "notes": notes, "singleIssue": issue_id}
     )
     base = workspace.current_branch()
-    branch = workspace.start_branch(f"{branch_prefix()}/issue-{issue_id[:12].lower()}")
+    branch = workspace.start_branch(f"{branch_prefix()}-fix-{issue_id[:8].lower()}")
     store.update_batch(batch_id, status="running", base_branch=base, branch=branch)
 
     steps: list[dict[str, Any]] = []
