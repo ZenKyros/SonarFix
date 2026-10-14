@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS projects (
     key             TEXT PRIMARY KEY,
     name            TEXT NOT NULL,
     repo_path       TEXT,
+    default_branch  TEXT,
     last_synced_at  TEXT
 );
 
@@ -77,6 +78,7 @@ CREATE TABLE IF NOT EXISTS fix_runs (
     build_output        TEXT,
     test_status         TEXT,
     test_output         TEXT,
+    artifacts           TEXT,
     status              TEXT,
     error               TEXT,
     created_at          TEXT
@@ -100,6 +102,7 @@ CREATE TABLE IF NOT EXISTS batches (
     build_output  TEXT,
     test_status   TEXT,
     test_output   TEXT,
+    artifacts     TEXT,
     retry_of      INTEGER,
     error         TEXT,
     created_at    TEXT,
@@ -132,6 +135,10 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
+_PROJECTS_MIGRATIONS = (
+    "ALTER TABLE projects ADD COLUMN default_branch TEXT",
+)
+
 _FIX_RUNS_MIGRATIONS = (
     "ALTER TABLE fix_runs ADD COLUMN base_branch TEXT",
     "ALTER TABLE fix_runs ADD COLUMN pr_title TEXT",
@@ -140,6 +147,7 @@ _FIX_RUNS_MIGRATIONS = (
     "ALTER TABLE fix_runs ADD COLUMN build_output TEXT",
     "ALTER TABLE fix_runs ADD COLUMN test_status TEXT",
     "ALTER TABLE fix_runs ADD COLUMN test_output TEXT",
+    "ALTER TABLE fix_runs ADD COLUMN artifacts TEXT",
 )
 
 _BATCHES_MIGRATIONS = (
@@ -147,6 +155,7 @@ _BATCHES_MIGRATIONS = (
     "ALTER TABLE batches ADD COLUMN build_output TEXT",
     "ALTER TABLE batches ADD COLUMN test_status TEXT",
     "ALTER TABLE batches ADD COLUMN test_output TEXT",
+    "ALTER TABLE batches ADD COLUMN artifacts TEXT",
     "ALTER TABLE batches ADD COLUMN retry_of INTEGER",
 )
 
@@ -213,7 +222,7 @@ def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
         _migrate_fix_plans(conn)
-        for statement in (*_FIX_RUNS_MIGRATIONS, *_BATCHES_MIGRATIONS):
+        for statement in (*_PROJECTS_MIGRATIONS, *_FIX_RUNS_MIGRATIONS, *_BATCHES_MIGRATIONS):
             try:
                 conn.execute(statement)
             except sqlite3.OperationalError:
@@ -267,6 +276,14 @@ def get_project(key: str) -> dict[str, Any] | None:
 def set_repo_path(key: str, repo_path: str) -> None:
     with connect() as conn:
         conn.execute("UPDATE projects SET repo_path = ? WHERE key = ?", (repo_path, key))
+
+
+def set_default_branch(key: str, branch: str) -> None:
+    """The real branch fix/batch work should always start from - never a
+    stray branch a previous run happened to leave the clone checked out on.
+    See `repo.safe_base_branch` for why this matters."""
+    with connect() as conn:
+        conn.execute("UPDATE projects SET default_branch = ? WHERE key = ?", (branch, key))
 
 
 def mark_synced(key: str) -> None:
@@ -365,22 +382,26 @@ def get_issue(issue_id: str) -> dict[str, Any] | None:
         return dict(row) if row else None
 
 
-def pr_status_by_issue(project_key: str) -> dict[str, dict[str, Any]]:
-    """Latest fix_run with an open PR for each issue in this project, keyed by
-    issue_id - lets the UI mark an issue "PR created" without re-analysing it."""
+def fix_status_by_issue(project_key: str) -> dict[str, dict[str, Any]]:
+    """Latest fix_run with status 'applied' for each issue, keyed by issue_id.
+
+    An issue counts as "fixed" as soon as its fix is committed locally, even
+    before a PR is opened for it (`pr_url` is NULL until then) - that's the
+    point at which it should stop showing up for re-analysis.
+    """
     with connect() as conn:
         rows = conn.execute(
             """
             SELECT p.issue_id AS issue_id, r.pr_url AS pr_url, r.branch AS branch,
-                   r.status AS run_status, r.created_at AS created_at
+                   r.build_status AS build_status, r.test_status AS test_status,
+                   r.created_at AS created_at
             FROM fix_runs r
             JOIN fix_plans p ON p.id = r.plan_id
-            WHERE p.project_key = ? AND r.pr_url IS NOT NULL AND r.pr_url != ''
+            WHERE p.project_key = ? AND r.status = 'applied'
             ORDER BY r.created_at ASC
             """,
             (project_key,),
         ).fetchall()
-    # Rows are in ascending created_at order, so the last write per issue_id wins.
     return {row["issue_id"]: dict(row) for row in rows}
 
 
@@ -471,14 +492,22 @@ def set_plan_status(plan_id: int, status: str, feedback: str | None = None) -> N
 # --- fix runs ----------------------------------------------------------------
 
 
+def _run_row(row: sqlite3.Row | None) -> dict[str, Any] | None:
+    if not row:
+        return None
+    run = dict(row)
+    run["artifacts"] = json.loads(run["artifacts"]) if run.get("artifacts") else []
+    return run
+
+
 def create_run(plan_id: int, fields: dict[str, Any]) -> int:
     with connect() as conn:
         cursor = conn.execute(
             "INSERT INTO fix_runs "
             "(plan_id, branch, base_branch, diff, changes_summary, commit_message, "
             " pr_title, pr_description, testing_suggestions, build_status, "
-            " build_output, test_status, test_output, status, error, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " build_output, test_status, test_output, artifacts, status, error, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 plan_id,
                 fields.get("branch"),
@@ -493,6 +522,7 @@ def create_run(plan_id: int, fields: dict[str, Any]) -> int:
                 fields.get("build_output"),
                 fields.get("test_status"),
                 fields.get("test_output"),
+                json.dumps(fields.get("artifacts") or []),
                 fields.get("status", "generated"),
                 fields.get("error"),
                 now(),
@@ -509,7 +539,7 @@ def set_run_pr_url(run_id: int, url: str) -> None:
 def get_run(run_id: int) -> dict[str, Any] | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM fix_runs WHERE id = ?", (run_id,)).fetchone()
-        return dict(row) if row else None
+        return _run_row(row)
 
 
 def latest_run(plan_id: int) -> dict[str, Any] | None:
@@ -518,12 +548,12 @@ def latest_run(plan_id: int) -> dict[str, Any] | None:
             "SELECT * FROM fix_runs WHERE plan_id = ? ORDER BY id DESC LIMIT 1",
             (plan_id,),
         ).fetchone()
-        return dict(row) if row else None
+        return _run_row(row)
 
 
 # --- batches -----------------------------------------------------------------
 
-_BATCH_JSON = ("selection", "steps")
+_BATCH_JSON = ("selection", "steps", "artifacts")
 
 
 def _batch_row(row: sqlite3.Row | None) -> dict[str, Any] | None:
@@ -576,3 +606,40 @@ def list_batches(project_key: str, limit: int = 10) -> list[dict[str, Any]]:
             (project_key, limit),
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+# A batch at either status has a verified, committed fix - "ready" just
+# hasn't been pushed as a PR yet. Both count as "resolved" for the plan
+# screen: once a batch gets this far, its issues should stop showing up
+# there to be fixed again.
+_RESOLVED_BATCH_STATUSES = ("ready", "pr_open")
+
+
+def resolved_batches(project_key: str) -> list[dict[str, Any]]:
+    """Full rows (diff, build/test logs, artifacts, steps) for every batch
+    of this project that reached a resolved state - what the "PR Created"
+    tab shows in detail."""
+    with connect() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM batches WHERE project_key = ? AND status IN "
+            f"({', '.join('?' * len(_RESOLVED_BATCH_STATUSES))}) ORDER BY id DESC",
+            (project_key, *_RESOLVED_BATCH_STATUSES),
+        ).fetchall()
+    return [b for b in (_batch_row(row) for row in rows) if b]
+
+
+def resolved_issue_ids(project_key: str) -> dict[str, int]:
+    """issue_id -> the id of the resolved batch that fixed it, for every
+    issue covered by a batch in `resolved_batches` - lets the plan screen
+    exclude issues that are already fixed/PR'd instead of offering them
+    again."""
+    covered: dict[str, int] = {}
+    for batch in resolved_batches(project_key):
+        for step in batch.get("steps") or []:
+            if step.get("kind") == "mechanical":
+                for item in step.get("applied") or []:
+                    covered.setdefault(item["issue_id"], batch["id"])
+            else:
+                for occ in step.get("occurrences") or []:
+                    covered.setdefault(occ["issue_id"], batch["id"])
+    return covered

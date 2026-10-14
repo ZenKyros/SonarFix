@@ -290,23 +290,64 @@ def build_groups(occurrences: list[Occurrence]) -> list[Group]:
 
 
 def build_plan(project_key: str) -> dict[str, Any]:
+    """The open-work view: issues already fixed and committed by a resolved
+    batch (see `store.resolved_batches`) are excluded here entirely - they
+    belong on the "PR Created" tab (`resolved_plan`), not offered again."""
     occurrences, _ = classify(project_key)
-    groups = build_groups(occurrences)
+    resolved = store.resolved_issue_ids(project_key)
+    open_occurrences = [o for o in occurrences if o.issue["id"] not in resolved]
+
+    groups = build_groups(open_occurrences)
     counts = defaultdict(int)
-    for occ in occurrences:
+    for occ in open_occurrences:
         if not occ.duplicate_of:
             counts[occ.bucket] += 1
     project = store.get_project(project_key) or {}
     return {
         "project": {"key": project_key, "name": project.get("name") or project_key},
         "summary": {
-            "total": len(occurrences),
-            "duplicates": sum(1 for o in occurrences if o.duplicate_of),
+            "total": len(open_occurrences),
+            "duplicates": sum(1 for o in open_occurrences if o.duplicate_of),
             "groups": len(groups),
             "mechanical": counts["mechanical"],
             "ai": counts["ai"],
             "skip": counts["skip"],
             "ai_groups": sum(1 for g in groups if g.bucket == "ai"),
+            "resolved": len(resolved),
         },
         "groups": [g.as_dict() for g in groups],
+    }
+
+
+def resolved_plan(project_key: str) -> dict[str, Any]:
+    """The "PR Created" tab: every resolved batch for this project, in full
+    detail (diff, build/test logs, artifacts, per-group reasoning) - plus a
+    confidence label derived from its actual build/test outcome, since the
+    batch flow has no AI-reported confidence score of its own to show."""
+    project = store.get_project(project_key) or {}
+    batches = store.resolved_batches(project_key)
+    for batch in batches:
+        batch["confidence"] = confidence_for(batch)
+    return {
+        "project": {"key": project_key, "name": project.get("name") or project_key},
+        "batches": batches,
+    }
+
+
+def confidence_for(batch: dict[str, Any]) -> dict[str, str]:
+    build_status = batch.get("build_status")
+    test_status = batch.get("test_status")
+    if build_status == "passed" and test_status in (None, "passed"):
+        return {
+            "level": "high",
+            "reason": "Build passed" + (" and existing tests still pass" if test_status == "passed" else " (no automated tests ran against this project)") + ".",
+        }
+    if build_status == "passed" and test_status == "failed":
+        return {
+            "level": "medium",
+            "reason": "Build passed, but an existing test broke - review the test log before merging.",
+        }
+    return {
+        "level": "low",
+        "reason": "Build could not be verified or failed - confirm it compiles yourself before merging.",
     }

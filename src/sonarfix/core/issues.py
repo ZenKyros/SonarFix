@@ -47,13 +47,39 @@ COMPOSITE_PROJECTS: dict[str, dict[str, Any]] = {
 }
 
 
-def _composite_owning(sonar_project: str) -> tuple[str, dict[str, Any]] | None:
+def composite_owning(sonar_project: str) -> tuple[str, dict[str, Any]] | None:
     """(composite_key, config) of the composite project this real Sonar
-    sub-project belongs to, if any."""
+    sub-project belongs to, if any.
+
+    Membership is checked by the sub-project's own key, not by which key was
+    used to fetch it - so the subfolder fix-up below applies whether a
+    monorepo sub-project was synced directly (by its raw Sonar key) or via
+    its composite key.
+    """
     for key, cfg in COMPOSITE_PROJECTS.items():
         if sonar_project in cfg["component_keys"]:
             return key, cfg
     return None
+
+
+def with_subfolder_prefix(component: str, sonar_project: str) -> str:
+    """A monorepo sub-project's component path, with its subfolder restored.
+
+    Sonar reports file paths relative to each sub-project's own
+    sonar.sources root, e.g. 'Controllers/Foo.cs' - but the git clone is the
+    whole monorepo, so that path is missing its own subfolder (e.g.
+    'SubProjectName/') and resolves to nothing in the local clone.
+    """
+    owning = composite_owning(sonar_project)
+    if not owning:
+        return component
+    _, cfg = owning
+    prefix = cfg.get("subfolder_prefix") or ""
+    if not prefix or not sonar_project.startswith(prefix):
+        return component
+    subfolder = sonar_project[len(prefix):]
+    rest = store.strip_component_prefix(component, sonar_project)
+    return f"{sonar_project}:{subfolder}/{rest}"
 
 
 def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
@@ -66,7 +92,7 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
     file_path = store.strip_component_prefix(raw.get("component") or "", sonar_project)
     project_key = sonar_project
 
-    owning = _composite_owning(sonar_project)
+    owning = composite_owning(sonar_project)
     if owning:
         composite_key, cfg = owning
         prefix = cfg.get("subfolder_prefix") or ""

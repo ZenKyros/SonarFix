@@ -5,6 +5,7 @@ import DiffBlock from "../components/DiffBlock";
 import ErrorBanner from "../components/ErrorBanner";
 import Stepper from "../components/Stepper";
 import BuildStatusBadge from "../components/BuildStatusBadge";
+import TerminalLog from "../components/TerminalLog";
 import { useStatus } from "../status";
 
 const ACTIVE = new Set(["queued", "running"]);
@@ -148,6 +149,11 @@ export default function BatchPage() {
         <div className="title-row">
           <h1>Run #{batch.id}</h1>
           <span className={`pill pill-${batch.status}`}>{STATUS_LABEL[batch.status] || batch.status}</span>
+          {(batch.status === "ready" || batch.status === "pr_open") && (
+            <a className="btn btn-ghost btn-sm" href={api.batchReportUrl(batch.id)} download>
+              HTML report
+            </a>
+          )}
         </div>
         <Stepper current={stage} />
       </div>
@@ -213,12 +219,8 @@ export default function BatchPage() {
                 Studio) to double-check.
               </p>
             )}
-            {batch.build_output && (
-              <details className="disclosure" open>
-                <summary>Build output</summary>
-                <pre className="code-block">{batch.build_output}</pre>
-              </details>
-            )}
+            <TerminalLog title="Build log" output={batch.build_output} />
+            <TerminalLog title="Test log" output={batch.test_output} />
             <p>
               <strong>Tell the AI what to do differently</strong>, then try
               again — it starts a fresh run with this build's error output and
@@ -254,9 +256,32 @@ export default function BatchPage() {
               <BuildStatusBadge status={batch.test_status} kind="Test" />
             </div>
           )}
+          {batch.artifacts?.length > 0 && (
+            <div className="artifacts">
+              <strong>Affected build artifacts</strong>
+              <p className="caption">What ships from this change, and exactly which files changed to produce it.</p>
+              <ul className="artifact-list">
+                {batch.artifacts.map((a, i) => (
+                  <li key={i}>
+                    <code>{a.file}</code>
+                    <span className="caption"> ({a.kind})</span>
+                    {a.files?.length > 0 && (
+                      <ul className="artifact-files">
+                        {a.files.map((f, j) => (
+                          <li key={j}>{f}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {batch.build_status === "skipped" && (
             <div className="banner banner-warn">Build verification skipped: {batch.build_output}</div>
           )}
+          <TerminalLog title="Build log" output={batch.build_output} />
+          <TerminalLog title="Test log" output={batch.test_output} />
           {batch.status === "pr_open" ? (
             <div className="banner banner-success pr-created-banner">
               <span className="pr-created-tag">✓ PR created</span>

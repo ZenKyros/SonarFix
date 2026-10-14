@@ -262,8 +262,19 @@ def post_clone(project_key: str, body: CloneBody) -> dict[str, Any]:
 
 @app.get("/projects/{project_key}/plan")
 def get_plan(project_key: str) -> dict[str, Any]:
-    """Group issues and route each to mechanical / AI / skip. No LLM calls."""
+    """Group issues and route each to mechanical / AI / skip. No LLM calls.
+
+    Excludes issues already fixed by a resolved batch - see `/resolved`.
+    """
     return _guard(planner.build_plan, project_key)
+
+
+@app.get("/projects/{project_key}/resolved")
+def get_resolved(project_key: str) -> dict[str, Any]:
+    """The "PR Created" tab: every batch that reached a resolved state
+    (fix applied and verified, with or without a PR open yet), in full
+    detail - diff, build/test logs, artifacts, and a confidence label."""
+    return _guard(planner.resolved_plan, project_key)
 
 
 @app.get("/projects/{project_key}/scm")
@@ -293,6 +304,18 @@ def get_batch(batch_id: int) -> dict[str, Any]:
     if not found:
         raise HTTPException(status_code=404, detail=f"Unknown batch: {batch_id}")
     return found
+
+
+@app.get("/batches/{batch_id}/report")
+def get_batch_report(batch_id: int) -> HTMLResponse:
+    """A single downloadable HTML file for just this batch/PR - its diff,
+    build/test logs, artifacts and confidence, without the rest of the
+    project's report."""
+    html_text = _guard(report.generate_batch_report, batch_id)
+    return HTMLResponse(
+        content=html_text,
+        headers={"Content-Disposition": f'attachment; filename="sonarfix-batch-{batch_id}.html"'},
+    )
 
 
 @app.post("/batches/{batch_id}/build")

@@ -11,12 +11,44 @@ from langgraph.types import Command
 from . import graph as workflow
 from . import issues as issues_
 from . import sonar, store
-from .config import ConfigError, get_settings
+from .config import CLAUDE_MODELS, ConfigError, get_settings
 from .repo import RepoError, RepoWorkspace
 
 
 class ServiceError(RuntimeError):
     """Something the user can fix: bad config, missing repo, unknown issue."""
+
+
+# Severity/type -> suggested model, a simple rule of thumb: spend more
+# reasoning on issues that are expensive to get wrong (security, blockers),
+# less on routine cleanup. `engine` is informational only today - switching
+# it at runtime isn't wired up yet, unlike the model (see `set_model_override`).
+_HIGH_STAKES_TYPES = {"VULNERABILITY", "SECURITY_HOTSPOT"}
+
+
+def recommend_model(severity: str | None, issue_type: str | None) -> dict[str, Any]:
+    severity = (severity or "").upper()
+    issue_type = (issue_type or "").upper()
+
+    if severity in ("BLOCKER", "CRITICAL") or issue_type in _HIGH_STAKES_TYPES:
+        model = "claude-opus-5-5"
+        engine = "deepagents"
+        reason = "High-stakes issue (blocker/critical severity, or a security vulnerability/hotspot) - worth the deepest reasoning."
+    elif severity == "MAJOR":
+        model = "claude-sonnet-5-5"
+        engine = "deepagents"
+        reason = "Routine but real quality issue - a balanced model is the efficient choice."
+    else:
+        model = "claude-haiku-4-5-20251001"
+        engine = "claude-code"
+        reason = "Low-impact issue (minor/info severity) - a fast, lightweight model is enough."
+
+    return {
+        "model": model,
+        "model_label": CLAUDE_MODELS.get(model, model),
+        "engine": engine,
+        "reason": reason,
+    }
 
 
 def _git(*args: str, cwd: str | Path | None = None) -> str:
@@ -49,10 +81,22 @@ def set_repo_path(project_key: str, repo_path: str) -> dict[str, Any]:
     if not store.get_project(project_key):
         raise ServiceError(f"Unknown project: {project_key}")
     try:
-        RepoWorkspace(repo_path)  # validated eagerly so the UI can report it
+        workspace = RepoWorkspace(repo_path)  # validated eagerly so the UI can report it
     except RepoError as exc:
         raise ServiceError(str(exc)) from exc
     store.set_repo_path(project_key, repo_path)
+    # Remember whatever branch this clone is on right now as the project's
+    # real source branch - manually-bound repos (unlike a fresh clone_repo
+    # call) have no other record of it, and fix/batch runs need one to avoid
+    # ever branching off a stray leftover branch (see repo.safe_base_branch).
+    from .repo import is_generated_branch
+
+    try:
+        current = workspace.current_branch()
+        if not is_generated_branch(current):
+            store.set_default_branch(project_key, current)
+    except RepoError:
+        pass
     project = store.get_project(project_key)
     assert project is not None
     return project
@@ -75,18 +119,20 @@ def sync_issues(project_key: str) -> dict[str, Any]:
         raws = sonar.list_issues(
             ",".join(composite["component_keys"]), branch=composite["branch"]
         )
-        prefix = composite.get("subfolder_prefix")
-        if prefix:
-            for issue in raws:
-                sub_project = issue.get("project") or ""
-                if sub_project.startswith(prefix):
-                    subfolder = sub_project[len(prefix) :]
-                    rest = store.strip_component_prefix(
-                        issue.get("component") or "", sub_project
-                    )
-                    issue["component"] = f"{sub_project}:{subfolder}/{rest}"
     else:
         raws = sonar.list_issues(project_key)
+
+    # Monorepo sub-projects (see issues_.COMPOSITE_PROJECTS) report file
+    # paths relative to their own sonar.sources root, not the git repo root.
+    # Fix that up by each issue's own project, regardless of whether this
+    # sync used the composite key or a sub-project's raw Sonar key directly -
+    # otherwise a sub-project synced on its own resolves no files locally.
+    for issue in raws:
+        sub_project = issue.get("project") or ""
+        issue["component"] = issues_.with_subfolder_prefix(
+            issue.get("component") or "", sub_project
+        )
+
     count = store.replace_issues(project_key, raws)
     store.mark_synced(project_key)
     return {"project_key": project_key, "issues_synced": count}
@@ -137,16 +183,18 @@ def list_issues(
 ) -> list[dict[str, Any]]:
     """Live from SonarQube every time - never a local cache that can go stale.
 
-    Each issue is stamped with `pr_url`/`has_pr` from our own local history,
-    so the UI can set aside anything that already has an open PR instead of
-    re-analysing it.
+    Each issue is stamped with its local fix history - `fix_status` is
+    "pr_open" once a PR exists, "applied" once a fix is committed but has no
+    PR yet, or None - so the UI can set aside anything already handled
+    instead of re-analysing it. `has_pr`/`pr_url` are kept for back-compat.
     """
     issues = issues_.filter_and_sort(issues_.fetch_many(project_key), severity, issue_type)
-    pr_status = store.pr_status_by_issue(project_key)
+    fix_status = store.fix_status_by_issue(project_key)
     for issue in issues:
-        found = pr_status.get(issue["id"])
+        found = fix_status.get(issue["id"])
         issue["pr_url"] = found["pr_url"] if found else None
-        issue["has_pr"] = bool(found)
+        issue["has_pr"] = bool(found and found["pr_url"])
+        issue["fix_status"] = ("pr_open" if issue["has_pr"] else "applied") if found else None
     return issues
 
 
@@ -167,6 +215,7 @@ def issue_detail(issue_id: str) -> dict[str, Any]:
         "rule": None,
         "code_context": None,
         "repo_error": None,
+        "recommendation": recommend_model(issue.get("severity"), issue.get("type")),
     }
 
     try:
@@ -403,14 +452,42 @@ def onboard_project(
     }
 
 
+def _require_build_passed(run: dict[str, Any]) -> None:
+    """A PR may only be opened once the build passed.
+
+    "skipped" is deliberately not good enough: it means the build could not
+    even be checked (no matching project, or no build tool on this machine),
+    which is not the same as a verified pass. A failed *test*, unlike a
+    failed build, does not block this - the project's existing tests may
+    simply not cover (or may conflict with) this specific fix; it is shown
+    to the reviewer (`run.test_status`/`run.test_output`) rather than
+    silently gating the PR.
+    """
+    build_status = run.get("build_status")
+    if build_status != "passed":
+        reason = (
+            "the build could not be verified (no matching project, or no "
+            "build tool available)"
+            if build_status == "skipped"
+            else "the build failed"
+        )
+        raise ServiceError(
+            f"Cannot open a pull request: {reason}. Build it (or retry with "
+            "feedback) until it passes first."
+        )
+
+
 def create_pull_request(issue_id: str) -> dict[str, Any]:
     """Push the committed fix branch for one issue and open a Bitbucket PR.
 
-    Only reachable once the fix has been committed (`run.status == "applied"`).
-    The build result is informational only and does not gate this - a run can
-    be 'applied' with a failed, skipped, or unverified build; see
-    `run.build_status` / `run.build_output`.
+    Only reachable once the fix has been committed (`run.status == "applied"`)
+    AND the build (and any tests) passed - a failed, skipped, or unverified
+    build blocks this; retry the build first. See `run.build_status` /
+    `run.test_status` for why. The PR targets `run.base_branch` - the branch
+    the repo was on when the fix branch was created (i.e. the branch Sonar
+    analysed / the repo was cloned from), never a hardcoded "main".
     """
+    from . import build as build_
     from . import scm
 
     plan = store.latest_plan(issue_id)
@@ -421,6 +498,7 @@ def create_pull_request(issue_id: str) -> dict[str, Any]:
         raise ServiceError("No applied fix is ready to publish for this issue.")
     if run.get("pr_url"):
         return run
+    _require_build_passed(run)
 
     project = store.get_project(plan["project_key"]) or {}
     repo_path = project.get("repo_path")
@@ -429,13 +507,18 @@ def create_pull_request(issue_id: str) -> dict[str, Any]:
         raise ServiceError(str(readiness["reason"]))
 
     base_branch = run.get("base_branch") or "main"
+    artifacts_section = build_.format_artifacts(run.get("artifacts") or [])
+    description = run.get("pr_description") or ""
+    if artifacts_section:
+        description = f"{description}\n\n{artifacts_section}" if description else artifacts_section
+
     scm.push(repo_path, run["branch"])
     url = scm.open_pull_request(
         repo_path,
         run["branch"],
         base_branch,
         run.get("pr_title") or plan.get("message") or f"SonarFix: {issue_id}",
-        run.get("pr_description") or "",
+        description,
     )
     store.set_run_pr_url(int(run["id"]), url)
     return store.get_run(int(run["id"])) or run
@@ -465,4 +548,7 @@ def clone_repo(
         scm.clone(url, dest, branch)
     else:
         _git("clone", "--single-branch", *(["--branch", branch] if branch else []), url, str(dest))
-    return set_repo_path(project_key, str(dest))
+    result = set_repo_path(project_key, str(dest))
+    if branch:
+        store.set_default_branch(project_key, branch)
+    return result

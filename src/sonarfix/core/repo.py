@@ -40,6 +40,15 @@ def branch_prefix() -> str:
     return user or "sonarfix"
 
 
+def is_generated_branch(name: str) -> bool:
+    """True for a branch SonarFix itself created (`<user>-fix-...`,
+    `<user>-batch-...`), so callers can tell a real source branch apart from
+    a leftover fix/batch branch a previous run left the clone checked out
+    on - checking out onto one of our own stray branches instead of the
+    repo's real branch is exactly how one failed run corrupts the next."""
+    return name.startswith(f"{branch_prefix()}-fix-") or name.startswith(f"{branch_prefix()}-batch-")
+
+
 def ensure_git_on_path() -> None:
     """Put git on PATH for this process (and its children) if it is installed."""
     if shutil.which("git"):
@@ -105,6 +114,25 @@ class RepoWorkspace:
         tree - that way everything we stage afterwards is the agent's work.
         """
         return bool(self._git("status", "--porcelain", "-uall").strip())
+
+    def safe_base_branch(self, known_default: str | None) -> str:
+        """The branch a new fix/batch branch should be created from.
+
+        Never trusts `current_branch()` blindly: if a previous run left the
+        clone checked out on one of our own generated branches (it crashed,
+        or a batch is still sitting unbuilt), branching off of it silently
+        chains fix branches together - and since only the final branch gets
+        pushed, Bitbucket rejects the PR with "no branch" for whatever
+        intermediate branch never made it to the remote. If `known_default`
+        is recorded, always check it out first; otherwise fall back to
+        whatever is current (best effort for a project whose branch we have
+        not learned yet).
+        """
+        if known_default and self.branch_exists(known_default):
+            if self.current_branch() != known_default:
+                self.checkout(known_default)
+            return known_default
+        return self.current_branch()
 
     def start_branch(self, preferred_name: str) -> str:
         """Create and check out a fresh branch, de-duplicating the name."""

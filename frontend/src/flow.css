@@ -195,11 +195,20 @@
   white-space: nowrap;
 }
 .chip-dup { background: #efe7ff; color: #5b3cc4; }
+.chip-pr { background: var(--success-soft); color: #007a4d; }
 .chevron { color: var(--text-faint); width: 14px; flex-shrink: 0; }
 @media (max-width: 720px) { .chips { display: none; } }
 
 .group-body { padding: 4px 18px 18px; border-top: 1px solid var(--border-soft); }
 .why { font-size: 0.88rem; color: var(--text-muted); margin: 12px 0; }
+
+/* resolved batches ("PR Created" tab) */
+.confidence-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.confidence-high { background: var(--success); }
+.confidence-medium { background: #e0a13a; }
+.confidence-low { background: var(--danger); }
+.resolved-step { margin: 14px 0; padding-top: 10px; border-top: 1px dashed var(--border-soft); }
+.resolved-step:first-of-type { border-top: none; padding-top: 0; }
 
 .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 720px) { .before-after { grid-template-columns: 1fr; } }
@@ -371,6 +380,13 @@
 .sev-MAJOR { --sev: #e08e2b; }
 .sev-MINOR { --sev: #3b82c4; }
 .sev-INFO { --sev: #8a8f98; }
+
+/* category summary strip (Sonar's Security / Reliability / Maintainability) */
+.category-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 720px) { .category-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cat-SECURITY { --sev: #c4293a; }
+.cat-RELIABILITY { --sev: #e08e2b; }
+.cat-MAINTAINABILITY { --sev: #3b82c4; }
 
 /* toolbar */
 .search { flex: 1; min-width: 200px; width: auto; }

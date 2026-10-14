@@ -15,6 +15,7 @@ data/*.db
 data/*.db-shm
 data/*.db-wal
 data/repos/
+data/backups/
+data/model_override.txt
 .sonarfix/
 demo/
-data/sonarfix.db-wal

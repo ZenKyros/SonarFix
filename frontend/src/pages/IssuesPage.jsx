@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
-import SeverityBadge from "../components/SeverityBadge";
+import SeverityBadge, { SEVERITY_LABEL } from "../components/SeverityBadge";
 import ErrorBanner from "../components/ErrorBanner";
 import { useStatus } from "../status";
 
@@ -15,12 +15,33 @@ const TYPE_LABEL = {
 };
 const SEVERITY_HINT = {
   BLOCKER: "Must fix - breaks the build or a release gate",
-  CRITICAL: "Likely to cause a bug or security issue in production",
-  MAJOR: "A real quality problem worth fixing soon",
+  CRITICAL: "High - likely to cause a bug or security issue in production",
+  MAJOR: "Medium - a real quality problem worth fixing soon",
   MINOR: "Low impact - fix when convenient",
   INFO: "Informational, no action required",
 };
 const sevRank = (s) => SEV_RANK[s] ?? SEVERITIES.length;
+
+// SonarQube's own quality-model categories, derived from the issue type -
+// the same grouping Sonar's own UI uses (Security / Reliability / Maintainability).
+const CATEGORIES = ["SECURITY", "RELIABILITY", "MAINTAINABILITY"];
+const CATEGORY_LABEL = {
+  SECURITY: "Security",
+  RELIABILITY: "Reliability",
+  MAINTAINABILITY: "Maintainability",
+};
+const CATEGORY_HINT = {
+  SECURITY: "Vulnerabilities and security hotspots - exploitable weaknesses",
+  RELIABILITY: "Bugs - code that is demonstrably wrong",
+  MAINTAINABILITY: "Code smells - harder to read, extend or safely change",
+};
+const TYPE_TO_CATEGORY = {
+  VULNERABILITY: "SECURITY",
+  SECURITY_HOTSPOT: "SECURITY",
+  BUG: "RELIABILITY",
+  CODE_SMELL: "MAINTAINABILITY",
+};
+const categoryOf = (type) => TYPE_TO_CATEGORY[type] || "MAINTAINABILITY";
 
 export default function IssuesPage() {
   const { projectKey } = useParams();
@@ -36,6 +57,7 @@ export default function IssuesPage() {
   const [error, setError] = useState(null);
 
   const [severity, setSeverity] = useState("All");
+  const [category, setCategory] = useState("All");
   const [type, setType] = useState("All");
   const [query, setQuery] = useState("");
   const [view, setView] = useState("rules");
@@ -79,11 +101,11 @@ export default function IssuesPage() {
     }
   };
 
-  const prCount = useMemo(() => issues.filter((i) => i.has_pr).length, [issues]);
-  const openCount = issues.length - prCount;
+  const fixedCount = useMemo(() => issues.filter((i) => i.fix_status).length, [issues]);
+  const openCount = issues.length - fixedCount;
 
   const tabIssues = useMemo(
-    () => issues.filter((i) => (tab === "pr" ? i.has_pr : !i.has_pr)),
+    () => issues.filter((i) => (tab === "fixed" ? i.fix_status : !i.fix_status)),
     [issues, tab]
   );
 
@@ -93,12 +115,22 @@ export default function IssuesPage() {
     return c;
   }, [tabIssues]);
 
+  const categoryCounts = useMemo(() => {
+    const c = {};
+    for (const i of tabIssues) {
+      const cat = categoryOf(i.type);
+      c[cat] = (c[cat] || 0) + 1;
+    }
+    return c;
+  }, [tabIssues]);
+
   const types = useMemo(() => [...new Set(tabIssues.map((i) => i.type))].sort(), [tabIssues]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tabIssues
       .filter((i) => severity === "All" || i.severity === severity)
+      .filter((i) => category === "All" || categoryOf(i.type) === category)
       .filter((i) => type === "All" || i.type === type)
       .filter(
         (i) =>
@@ -108,7 +140,7 @@ export default function IssuesPage() {
           (i.file_path || "").toLowerCase().includes(q)
       )
       .sort((a, b) => sevRank(a.severity) - sevRank(b.severity));
-  }, [tabIssues, severity, type, query]);
+  }, [tabIssues, severity, category, type, query]);
 
   const groups = useMemo(() => {
     const byRule = new Map();
@@ -121,7 +153,7 @@ export default function IssuesPage() {
       .sort((a, b) => sevRank(a.worst) - sevRank(b.worst) || b.items.length - a.items.length);
   }, [filtered]);
 
-  const filtersActive = severity !== "All" || type !== "All" || query !== "";
+  const filtersActive = severity !== "All" || category !== "All" || type !== "All" || query !== "";
 
   return (
     <div className="page">
@@ -143,9 +175,32 @@ export default function IssuesPage() {
         <button className={`page-tab ${tab === "open" ? "active" : ""}`} onClick={() => setTab("open")}>
           Open <span className="count-pill">{openCount}</span>
         </button>
-        <button className={`page-tab ${tab === "pr" ? "active" : ""}`} onClick={() => setTab("pr")}>
-          ✓ PR Created <span className="count-pill">{prCount}</span>
+        <button className={`page-tab ${tab === "fixed" ? "active" : ""}`} onClick={() => setTab("fixed")}>
+          ✓ Fixed <span className="count-pill">{fixedCount}</span>
         </button>
+      </div>
+
+      <div className="sev-strip category-strip">
+        <button
+          className={`sev-tile ${category === "All" ? "active" : ""}`}
+          onClick={() => setCategory("All")}
+          title="Show every category"
+        >
+          <span className="sev-count">{tabIssues.length}</span>
+          <span className="sev-name">All</span>
+        </button>
+        {CATEGORIES.map((c) => (
+          <button
+            key={c}
+            className={`sev-tile cat-${c} ${category === c ? "active" : ""}`}
+            onClick={() => setCategory(category === c ? "All" : c)}
+            disabled={!categoryCounts[c]}
+            title={CATEGORY_HINT[c]}
+          >
+            <span className="sev-count">{categoryCounts[c] || 0}</span>
+            <span className="sev-name">{CATEGORY_LABEL[c]}</span>
+          </button>
+        ))}
       </div>
 
       <div className="sev-strip">
@@ -166,7 +221,7 @@ export default function IssuesPage() {
             title={`${SEVERITY_HINT[s]} - click to filter, click again to clear`}
           >
             <span className="sev-count">{counts[s] || 0}</span>
-            <span className="sev-name">{s.charAt(0) + s.slice(1).toLowerCase()}</span>
+            <span className="sev-name">{SEVERITY_LABEL[s] || s}</span>
           </button>
         ))}
       </div>
@@ -215,6 +270,7 @@ export default function IssuesPage() {
                 className="link-btn"
                 onClick={() => {
                   setSeverity("All");
+                  setCategory("All");
                   setType("All");
                   setQuery("");
                 }}
@@ -286,14 +342,15 @@ function IssueRow({ issue, showRule, fixKind }) {
   const file = (issue.file_path || "").split("/").pop();
   return (
     <li>
-      <Link to={`/issues/${issue.id}`} className={`issue-row ${issue.has_pr ? "has-pr" : ""}`}>
+      <Link to={`/issues/${issue.id}`} className={`issue-row ${issue.fix_status ? "has-pr" : ""}`}>
         {showRule && <SeverityBadge severity={issue.severity} />}
         <span className="issue-row-main">
           <span className="issue-row-msg">{issue.message}</span>
           {showRule && <code className="rule">{issue.rule}</code>}
         </span>
         {showRule && <FixTag kind={fixKind} />}
-        {issue.has_pr && <span className="pr-created-tag">✓ PR created</span>}
+        {issue.fix_status === "pr_open" && <span className="pr-created-tag">✓ PR created</span>}
+        {issue.fix_status === "applied" && <span className="pr-created-tag">✓ Fix applied</span>}
         <span className="loc" title={issue.file_path}>
           {file}
           {issue.line ? `:${issue.line}` : ""}

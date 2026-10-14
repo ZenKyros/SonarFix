@@ -720,7 +720,9 @@ button, input, select, textarea {
   align-items: center;
   gap: 6px;
   background: none;
-  border: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
   border-bottom: 3px solid transparent;
   padding: 10px 6px;
   font-size: 0.92rem;
@@ -778,3 +780,80 @@ button, input, select, textarea {
 }
 
 .issue-row.has-pr { background: var(--success-soft); }
+
+/* --- affected build artifacts ---------------------------------------------- */
+
+.artifacts { margin: 14px 0; }
+
+.artifact-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.artifact-list li {
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.86rem;
+}
+
+.recommendation-banner { flex-wrap: wrap; }
+
+/* --- terminal-style build/test log ----------------------------------------- */
+
+.terminal {
+  background: #1c2024;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 6px 0 16px;
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #2a2f35;
+}
+
+.terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+.terminal-dot-red { background: #ff5f56; }
+.terminal-dot-yellow { background: #ffbd2e; }
+.terminal-dot-green { background: #27c93f; }
+
+.terminal-title {
+  margin-left: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9aa0a8;
+}
+
+.terminal-body {
+  margin: 0;
+  padding: 14px 16px;
+  color: #e2e4e8;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.artifact-files {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0 0 0 14px;
+}
+
+.artifact-files li {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

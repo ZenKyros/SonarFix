@@ -16,7 +16,7 @@ from . import build, engine, scm, sonar, store
 from .config import get_settings
 from .planner import Group, Occurrence, SourceFile, build_groups, classify
 from .recipes import target_from
-from .repo import RepoWorkspace, branch_prefix
+from .repo import RepoWorkspace, branch_prefix, is_generated_branch
 from .repo_profile import profile_for
 
 
@@ -177,7 +177,10 @@ def run(batch_id: int) -> None:
         mech_groups = [groups[g] for g in selection.get("mechanical", []) if g in groups]
         ai_groups = [groups[g] for g in selection.get("ai", []) if g in groups]
 
-        base = workspace.current_branch()
+        project = store.get_project(batch["project_key"]) or {}
+        base = workspace.safe_base_branch(project.get("default_branch"))
+        if not project.get("default_branch") and not is_generated_branch(base):
+            store.set_default_branch(batch["project_key"], base)
         branch = workspace.start_branch(f"{branch_prefix()}-batch-{batch_id}")
         store.update_batch(batch_id, base_branch=base, branch=branch)
 
@@ -273,6 +276,11 @@ def request_build(batch_id: int) -> dict[str, Any]:
     feedback) or give up. Either way the branch is kept, never deleted: every
     commit made during `run()` is already real, so the attempt stays
     inspectable (e.g. open it in Visual Studio and build it yourself).
+
+    A failed *test* does not gate this, unlike a failed build: the
+    project's existing tests may simply not apply to (or may conflict with)
+    this specific fix, so test results are recorded and shown but never
+    block reaching 'ready'.
     """
     batch_row = store.get_batch(batch_id)
     if not batch_row:
@@ -297,6 +305,7 @@ def request_build(batch_id: int) -> dict[str, Any]:
             batch_id, status="build_failed",
             build_status=result["status"], build_output=f"{note}\n\n{result['output']}",
             test_status=result.get("test_status"), test_output=result.get("test_output"),
+            artifacts=result.get("artifacts"),
         )
         return store.get_batch(batch_id) or {}
 
@@ -306,6 +315,7 @@ def request_build(batch_id: int) -> dict[str, Any]:
         batch_id, status="ready", pr_title=title, pr_description=description,
         build_status=result["status"], build_output=result["output"],
         test_status=result.get("test_status"), test_output=result.get("test_output"),
+        artifacts=result.get("artifacts"),
     )
     return store.get_batch(batch_id) or {}
 
@@ -410,9 +420,14 @@ def create_pull_request(batch_id: int) -> dict[str, Any]:
     if not readiness["ready"]:
         raise BatchError(str(readiness["reason"]))
 
+    artifacts_section = build.format_artifacts(batch.get("artifacts") or [])
+    description = batch["pr_description"] or ""
+    if artifacts_section:
+        description = f"{description}\n\n{artifacts_section}" if description else artifacts_section
+
     scm.push(repo_path, batch["branch"])
     url = scm.open_pull_request(
-        repo_path, batch["branch"], batch["base_branch"], batch["pr_title"], batch["pr_description"]
+        repo_path, batch["branch"], batch["base_branch"], batch["pr_title"], description
     )
     store.update_batch(batch_id, status="pr_open", pr_url=url)
     return store.get_batch(batch_id)
@@ -446,7 +461,10 @@ def fix_single(issue_id: str, notes: str = "") -> dict[str, Any]:
     batch_id = store.create_batch(
         project_key, {"mechanical": [], "ai": [], "notes": notes, "singleIssue": issue_id}
     )
-    base = workspace.current_branch()
+    project = store.get_project(project_key) or {}
+    base = workspace.safe_base_branch(project.get("default_branch"))
+    if not project.get("default_branch") and not is_generated_branch(base):
+        store.set_default_branch(project_key, base)
     branch = workspace.start_branch(f"{branch_prefix()}-fix-{issue_id[:8].lower()}")
     store.update_batch(batch_id, status="running", base_branch=base, branch=branch)
 

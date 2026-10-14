@@ -6,6 +6,7 @@ import ConfidenceBar from "../components/ConfidenceBar";
 import ErrorBanner from "../components/ErrorBanner";
 import DiffBlock from "../components/DiffBlock";
 import BuildStatusBadge from "../components/BuildStatusBadge";
+import TerminalLog from "../components/TerminalLog";
 import { useStatus } from "../status";
 
 export default function IssueDetailPage() {
@@ -16,6 +17,8 @@ export default function IssueDetailPage() {
   const [detail, setDetail] = useState(null);
   const [state, setState] = useState(null);
   const [scm, setScm] = useState(null);
+  const [modelInfo, setModelInfo] = useState(null);
+  const [switchingModel, setSwitchingModel] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null);
   const [feedback, setFeedback] = useState("");
@@ -32,6 +35,21 @@ export default function IssueDetailPage() {
     setState(s);
     if (d.project?.key) {
       api.scmStatus(d.project.key).then(setScm).catch(() => {});
+    }
+    api.getModelSettings().then(setModelInfo).catch(() => {});
+  };
+
+  const useRecommendedModel = async () => {
+    const model = detail?.recommendation?.model;
+    if (!model) return;
+    setSwitchingModel(true);
+    try {
+      const res = await api.setModel(model);
+      setModelInfo((prev) => ({ ...prev, model: res.model }));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setSwitchingModel(false);
     }
   };
 
@@ -151,6 +169,24 @@ export default function IssueDetailPage() {
           </>
         )}
       </section>
+
+      {detail.recommendation && modelInfo && (
+        <div className="banner banner-warn recommendation-banner">
+          <span>
+            Recommended for this issue: <strong>{detail.recommendation.model_label}</strong>
+            {" · "}
+            {detail.recommendation.engine === "deepagents" ? "deep agent" : "fast agent"}.{" "}
+            {detail.recommendation.reason}
+          </span>
+          {modelInfo.model === detail.recommendation.model ? (
+            <span className="caption">✓ Already selected</span>
+          ) : (
+            <button className="btn btn-outline btn-sm" onClick={useRecommendedModel} disabled={switchingModel}>
+              {switchingModel ? "Switching…" : "Use recommended model"}
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="button-row">
         <button
@@ -306,6 +342,8 @@ function FixSection({
   }
   const testing = fix.testing_suggestions || run.testing_suggestions;
   const buildStatus = run.build_status;
+  // A failed test doesn't block the PR - only a failed/unverified build does.
+  const buildReady = buildStatus === "passed";
 
   return (
     <section className="card">
@@ -329,8 +367,11 @@ function FixSection({
         <div className="approval">
           <p>
             <strong>Ready to build.</strong> Build and test verification
-            covers C#/.NET, Maven and Gradle projects and is informational
-            only — you can still generate a pull request either way.
+            covers C#/.NET, C++ (CMake or Visual Studio), Maven and Gradle
+            projects. The build must pass before a pull request can be
+            opened; a failed test does not block it — tests are shown for
+            review only, since the project's existing tests may not apply
+            to this specific fix.
           </p>
           <div className="button-row">
             <button className="btn btn-primary" onClick={onBuild} disabled={busy === "build"}>
@@ -404,17 +445,29 @@ function FixSection({
           you can still generate a pull request and fix it afterward.
         </div>
       )}
-      {buildStatus && run.build_output && (
-        <details className="disclosure">
-          <summary>Build output</summary>
-          <pre className="code-block">{run.build_output}</pre>
-        </details>
-      )}
-      {run.test_output && (
-        <details className="disclosure">
-          <summary>Test output</summary>
-          <pre className="code-block">{run.test_output}</pre>
-        </details>
+      <TerminalLog title="Build log" output={run.build_output} />
+      <TerminalLog title="Test log" output={run.test_output} />
+
+      {run.artifacts?.length > 0 && (
+        <div className="artifacts">
+          <strong>Affected build artifacts</strong>
+          <p className="caption">What ships from this change, and exactly which files changed to produce it - share with the team reviewing the PR.</p>
+          <ul className="artifact-list">
+            {run.artifacts.map((a, i) => (
+              <li key={i}>
+                <code>{a.file}</code>
+                <span className="caption"> ({a.kind})</span>
+                {a.files?.length > 0 && (
+                  <ul className="artifact-files">
+                    {a.files.map((f, j) => (
+                      <li key={j}>{f}</li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {state.commit_sha && <p className="caption">Commit {state.commit_sha}</p>}
@@ -452,7 +505,8 @@ function FixSection({
           </span>
         </div>
       ) : (
-        state.status === "applied" && (
+        state.status === "applied" &&
+        (buildReady ? (
           <>
             <div className="button-row">
               <button className="btn btn-primary" onClick={onCreatePr} disabled={busy === "createPr"}>
@@ -465,7 +519,13 @@ function FixSection({
               </p>
             )}
           </>
-        )
+        ) : (
+          <div className="banner banner-warn">
+            A pull request can't be opened until the build passes — build it
+            (or retry with feedback) above first. A failed test doesn't block
+            this; it's shown for review only.
+          </div>
+        ))
       )}
     </section>
   );

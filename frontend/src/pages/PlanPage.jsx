@@ -7,6 +7,8 @@ import ErrorBanner from "../components/ErrorBanner";
 import SeverityBadge from "../components/SeverityBadge";
 import StatTile from "../components/StatTile";
 import Stepper from "../components/Stepper";
+import BuildStatusBadge from "../components/BuildStatusBadge";
+import TerminalLog from "../components/TerminalLog";
 
 const SECTIONS = [
   {
@@ -34,12 +36,20 @@ export default function PlanPage() {
   const navigate = useNavigate();
   const [plan, setPlan] = useState(null);
   const [batches, setBatches] = useState([]);
+  const [resolved, setResolved] = useState(null);
+  const [tab, setTab] = useState("plan");
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(new Set());
   const [open, setOpen] = useState(new Set());
   const [notes, setNotes] = useState("");
   const [approved, setApproved] = useState(false);
   const [running, setRunning] = useState(false);
+
+  const loadResolved = () =>
+    api
+      .resolvedPlan(projectKey)
+      .then(setResolved)
+      .catch((err) => setError(err instanceof ApiError ? err.message : String(err)));
 
   useEffect(() => {
     api
@@ -50,6 +60,8 @@ export default function PlanPage() {
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : String(err)));
     api.listBatches(projectKey).then(setBatches).catch(() => {});
+    loadResolved();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectKey]);
 
   const byBucket = useMemo(() => {
@@ -114,8 +126,9 @@ export default function PlanPage() {
   }
 
   const s = plan.summary;
+  const resolvedCount = resolved?.batches?.length || 0;
   return (
-    <div className="page with-actionbar">
+    <div className={`page ${tab === "plan" ? "with-actionbar" : ""}`}>
       <div className="page-head">
         <button className="link-back" onClick={() => navigate("/")}>← Projects</button>
         <div className="title-row">
@@ -129,6 +142,19 @@ export default function PlanPage() {
 
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
+      <div className="page-tabs">
+        <button className={`page-tab ${tab === "plan" ? "active" : ""}`} onClick={() => setTab("plan")}>
+          Plan <span className="count-pill">{s.total}</span>
+        </button>
+        <button className={`page-tab ${tab === "pr" ? "active" : ""}`} onClick={() => { setTab("pr"); loadResolved(); }}>
+          ✓ PR Created <span className="count-pill">{resolvedCount}</span>
+        </button>
+      </div>
+
+      {tab === "pr" ? (
+        <ResolvedBatches resolved={resolved} />
+      ) : (
+        <>
       <div className="stats">
         <StatTile label="Open issues" value={s.total} hint={`${s.duplicates} duplicate${s.duplicates === 1 ? "" : "s"}`} />
         <StatTile label="Patterns" value={s.groups} hint="grouped by rule" />
@@ -212,6 +238,8 @@ export default function PlanPage() {
           </button>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
@@ -273,6 +301,137 @@ function GroupCard({ group, selectable, checked, onToggle, expanded, onExpand })
               </li>
             ))}
           </ul>
+        </div>
+      )}
+    </li>
+  );
+}
+
+const CONFIDENCE_LABEL = { high: "High confidence", medium: "Medium confidence", low: "Low confidence" };
+
+function ResolvedBatches({ resolved }) {
+  if (!resolved) return <div className="empty">Loading…</div>;
+  if (resolved.batches.length === 0) {
+    return (
+      <div className="empty">
+        Nothing here yet. Once a batch's build (and tests) pass, it moves here - whether or
+        not a pull request has been opened for it yet.
+      </div>
+    );
+  }
+  return (
+    <ul className="group-list resolved-list">
+      {resolved.batches.map((batch) => (
+        <ResolvedBatchCard key={batch.id} batch={batch} />
+      ))}
+    </ul>
+  );
+}
+
+function ResolvedBatchCard({ batch }) {
+  const [open, setOpen] = useState(false);
+  const issueCount = (batch.steps || []).reduce(
+    (n, s) => n + (s.kind === "mechanical" ? (s.applied || []).length : (s.occurrences || []).length),
+    0
+  );
+  const confidence = batch.confidence || {};
+
+  return (
+    <li className="group is-selected resolved-batch">
+      <button className="group-main" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <span className={`confidence-dot confidence-${confidence.level}`} title={confidence.reason} />
+        <span className="group-title">
+          <span>{batch.pr_title || `Batch #${batch.id}`}</span>
+          <code className="rule">{batch.branch}</code>
+        </span>
+        <span className="chips">
+          <span className="chip">{issueCount} issue{issueCount === 1 ? "" : "s"}</span>
+          {batch.status === "pr_open" ? (
+            <span className="chip chip-pr">✓ PR created</span>
+          ) : (
+            <span className="chip">✓ Fix applied</span>
+          )}
+          <span className="chip">{CONFIDENCE_LABEL[confidence.level] || "Confidence unknown"}</span>
+        </span>
+        <span className="chevron">{open ? "▾" : "▸"}</span>
+      </button>
+
+      {open && (
+        <div className="group-body resolved-body">
+          <div className="button-row">
+            <a className="btn btn-outline btn-sm" href={api.batchReportUrl(batch.id)} download>
+              HTML report for this PR
+            </a>
+          </div>
+
+          <div className="status-badge-row">
+            <BuildStatusBadge status={batch.build_status} kind="Build" />
+            <BuildStatusBadge status={batch.test_status} kind="Test" />
+          </div>
+
+          <p className="why">
+            <strong>Why this should work ({CONFIDENCE_LABEL[confidence.level]}):</strong> {confidence.reason}
+          </p>
+
+          {batch.status === "pr_open" ? (
+            <p className="caption">
+              Pull request:{" "}
+              <a href={batch.pr_url} target="_blank" rel="noreferrer">{batch.pr_url}</a>
+            </p>
+          ) : (
+            <p className="caption">
+              Fix committed on <code>{batch.branch}</code>, no pull request yet -{" "}
+              <Link to={`/batches/${batch.id}`}>open it to publish</Link>.
+            </p>
+          )}
+
+          {(batch.steps || []).map((step, i) => (
+            <div key={i} className="resolved-step">
+              <strong>{step.kind === "mechanical" ? "Mechanical recipes" : step.title}</strong>
+              {step.summary && <p className="why">{step.summary}</p>}
+              {step.testing && (
+                <p className="caption"><strong>How to verify:</strong> {step.testing}</p>
+              )}
+              <ul className="occurrences">
+                {(step.kind === "mechanical" ? step.applied : step.occurrences || []).map((o) => (
+                  <li key={o.issue_id}>
+                    <Link to={`/issues/${o.issue_id}`}>{o.file}{o.line ? `:${o.line}` : ""}</Link>
+                    {o.message && <span className="occ-note">{o.message}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          {batch.artifacts?.length > 0 && (
+            <div className="artifacts">
+              <strong>Affected build artifacts</strong>
+              <p className="caption">What ships from this change, and exactly which files changed to produce it.</p>
+              <ul className="artifact-list">
+                {batch.artifacts.map((a, i) => (
+                  <li key={i}>
+                    <code>{a.file}</code>
+                    <span className="caption"> ({a.kind})</span>
+                    {a.files?.length > 0 && (
+                      <ul className="artifact-files">
+                        {a.files.map((f, j) => <li key={j}>{f}</li>)}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <TerminalLog title="Build log" output={batch.build_output} />
+          <TerminalLog title="Test log" output={batch.test_output} />
+
+          {batch.diff && (
+            <>
+              <strong>Before &rarr; after (unified diff)</strong>
+              <DiffBlock diff={batch.diff} />
+            </>
+          )}
         </div>
       )}
     </li>

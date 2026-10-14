@@ -28,7 +28,7 @@ from langgraph.types import interrupt
 from . import build, engine, sonar, store
 from . import issues as issues_
 from .config import get_settings
-from .repo import RepoWorkspace, branch_prefix
+from .repo import RepoWorkspace, branch_prefix, is_generated_branch
 from .repo_profile import profile_for
 
 class FixState(TypedDict, total=False):
@@ -307,7 +307,10 @@ def route_approval(state: FixState) -> Literal["apply_fix", "__end__"]:
 
 def apply_fix(state: FixState) -> dict[str, Any]:
     workspace = RepoWorkspace(state["repo_path"])
-    base_branch = workspace.current_branch()
+    project = store.get_project(state["project_key"]) or {}
+    base_branch = workspace.safe_base_branch(project.get("default_branch"))
+    if not project.get("default_branch") and not is_generated_branch(base_branch):
+        store.set_default_branch(state["project_key"], base_branch)
 
     if workspace.is_dirty():
         return {
@@ -413,6 +416,7 @@ def finalize(state: FixState) -> dict[str, Any]:
                 "build_output": build_result.get("output"),
                 "test_status": build_result.get("test_status"),
                 "test_output": build_result.get("test_output"),
+                "artifacts": build_result.get("artifacts"),
             },
         )
         return {"run_id": run_id}
@@ -438,6 +442,7 @@ def finalize(state: FixState) -> dict[str, Any]:
             "build_output": build_result.get("output"),
             "test_status": build_result.get("test_status"),
             "test_output": build_result.get("test_output"),
+            "artifacts": build_result.get("artifacts"),
             "status": "applied",
         },
     )

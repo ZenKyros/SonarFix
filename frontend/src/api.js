@@ -76,10 +76,12 @@ export const api = {
   cloneRepo: (key, url, branch) =>
     request("POST", `/projects/${key}/clone`, { json: { url, branch: branch || null } }),
   plan: (key) => request("GET", `/projects/${key}/plan`),
+  resolvedPlan: (key) => request("GET", `/projects/${key}/resolved`),
   scmStatus: (key) => request("GET", `/projects/${key}/scm`),
   createBatch: (key, body) => request("POST", `/projects/${key}/batches`, { json: body }),
   listBatches: (key) => request("GET", `/projects/${key}/batches`),
   getBatch: (id) => request("GET", `/batches/${id}`),
+  batchReportUrl: (id) => `${API_URL}/batches/${id}/report`,
   buildBatch: (id) => request("POST", `/batches/${id}/build`),
   retryBatch: (id, feedback) =>
     request("POST", `/batches/${id}/retry`, { json: { feedback: feedback || null } }),
