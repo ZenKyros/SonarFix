@@ -187,11 +187,17 @@ def list_issues(
     "pr_open" once a PR exists, "applied" once a fix is committed but has no
     PR yet, or None - so the UI can set aside anything already handled
     instead of re-analysing it. `has_pr`/`pr_url` are kept for back-compat.
+
+    An issue can be resolved through either of two independent flows: the
+    single-issue AI session (`fix_runs`) or a batch (`batches`) - checking
+    only the former is what made batch-created PRs disappear from the
+    "Fixed" tab, so both are checked here.
     """
     issues = issues_.filter_and_sort(issues_.fetch_many(project_key), severity, issue_type)
     fix_status = store.fix_status_by_issue(project_key)
+    batch_status = store.batch_status_by_issue(project_key)
     for issue in issues:
-        found = fix_status.get(issue["id"])
+        found = fix_status.get(issue["id"]) or batch_status.get(issue["id"])
         issue["pr_url"] = found["pr_url"] if found else None
         issue["has_pr"] = bool(found and found["pr_url"])
         issue["fix_status"] = ("pr_open" if issue["has_pr"] else "applied") if found else None
@@ -200,6 +206,32 @@ def list_issues(
 
 def issue_facets(project_key: str) -> dict[str, list[str]]:
     return issues_.facets(project_key)
+
+
+def scan_dependencies(project_key: str) -> dict[str, Any]:
+    """Check every package this project depends on against known CVEs, and
+    whether upgrading to the fixed version is a patch/minor (mechanical) or
+    major (needs a human to read the changelog) bump. Human-triggered, like
+    sync_issues - never run implicitly, since it shells out to dotnet/npm
+    and calls OSV.dev."""
+    project = store.get_project(project_key)
+    if not project:
+        raise ServiceError(f"Unknown project: {project_key}")
+    repo_path = project.get("repo_path")
+    if not repo_path:
+        raise ServiceError("No local repository configured for this project yet.")
+    from . import deps as deps_
+
+    findings = deps_.scan_project(repo_path)
+    store.replace_dependencies(project_key, findings)
+    return {"count": len(findings), "dependencies": store.list_dependencies(project_key)}
+
+
+def list_dependencies(project_key: str) -> dict[str, Any]:
+    return {
+        "dependencies": store.list_dependencies(project_key),
+        "scanned_at": store.dependencies_scanned_at(project_key),
+    }
 
 
 def issue_detail(issue_id: str) -> dict[str, Any]:

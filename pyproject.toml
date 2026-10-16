@@ -1,11 +1,8 @@
 [project]
 name = "sonarfix"
 version = "0.1.0"
-description = "Kyros SonarFix - AI-assisted remediation of SonarQube issues"
+description = "AI-assisted remediation of SonarQube issues"
 readme = "README.md"
-authors = [
-    { name = "Roshan Yadav", email = "roscod108@gmail.com" }
-]
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",

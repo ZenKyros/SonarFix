@@ -54,15 +54,6 @@ export const api = {
 
   listProjects: () => request("GET", "/projects"),
   syncProjects: () => request("POST", "/projects/sync"),
-  onboard: (sonarUrl, repoUrl, branch, repoPath) =>
-    request("POST", "/onboard", {
-      json: {
-        sonar_url: sonarUrl,
-        repo_url: repoUrl,
-        branch: branch || null,
-        repo_path: repoPath || null,
-      },
-    }),
   setRepoPath: (key, repoPath) =>
     request("PUT", `/projects/${key}/repo`, { json: { repo_path: repoPath } }),
   autoClone: (key) => request("POST", `/projects/${key}/auto-clone`),
@@ -72,6 +63,9 @@ export const api = {
   listIssues: (key, { severity, type } = {}) =>
     request("GET", `/projects/${key}/issues`, { params: { severity, type } }),
   facets: (key) => request("GET", `/projects/${key}/facets`),
+
+  listDependencies: (key) => request("GET", `/projects/${key}/dependencies`),
+  scanDependencies: (key) => request("POST", `/projects/${key}/dependencies/scan`),
 
   cloneRepo: (key, url, branch) =>
     request("POST", `/projects/${key}/clone`, { json: { url, branch: branch || null } }),

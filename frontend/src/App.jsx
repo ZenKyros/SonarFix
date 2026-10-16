@@ -5,6 +5,7 @@ import PlanPage from "./pages/PlanPage";
 import BatchPage from "./pages/BatchPage";
 import IssuesPage from "./pages/IssuesPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
+import DependenciesPage from "./pages/DependenciesPage";
 import { StatusProvider } from "./status";
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
             <Route path="/" element={<ProjectsPage />} />
             <Route path="/projects/:projectKey/plan" element={<PlanPage />} />
             <Route path="/projects/:projectKey/issues" element={<IssuesPage />} />
+            <Route path="/projects/:projectKey/dependencies" element={<DependenciesPage />} />
             <Route path="/batches/:batchId" element={<BatchPage />} />
             <Route path="/issues/:issueId" element={<IssueDetailPage />} />
           </Routes>

@@ -110,6 +110,26 @@ CREATE TABLE IF NOT EXISTS batches (
 );
 
 CREATE INDEX IF NOT EXISTS idx_batches_project ON batches(project_key);
+
+CREATE TABLE IF NOT EXISTS dependencies (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_key     TEXT NOT NULL REFERENCES projects(key),
+    ecosystem       TEXT,
+    package         TEXT,
+    current_version TEXT,
+    fixed_version   TEXT,
+    severity        TEXT,
+    advisory_id     TEXT,
+    manifest_path   TEXT,
+    is_direct       INTEGER,
+    bump_kind       TEXT,
+    recommendation  TEXT,
+    summary         TEXT,
+    reason          TEXT,
+    scanned_at      TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_deps_project ON dependencies(project_key);
 """
 
 # Severity order used for sorting in the UI (worst first).
@@ -119,6 +139,17 @@ SEVERITY_RANK = {
     "MAJOR": 2,
     "MINOR": 3,
     "INFO": 4,
+}
+
+# Dependency findings use the vulnerability database's own severity words
+# (OSV.dev, npm audit, NuGet advisories), not Sonar's - kept separate so a
+# dependency's "critical" doesn't silently collide with Sonar's.
+DEP_SEVERITY_RANK = {
+    "critical": 0,
+    "high": 1,
+    "moderate": 2,
+    "low": 3,
+    "unknown": 4,
 }
 
 
@@ -157,6 +188,11 @@ _BATCHES_MIGRATIONS = (
     "ALTER TABLE batches ADD COLUMN test_output TEXT",
     "ALTER TABLE batches ADD COLUMN artifacts TEXT",
     "ALTER TABLE batches ADD COLUMN retry_of INTEGER",
+)
+
+_DEPENDENCIES_MIGRATIONS = (
+    "ALTER TABLE dependencies ADD COLUMN summary TEXT",
+    "ALTER TABLE dependencies ADD COLUMN reason TEXT",
 )
 
 
@@ -222,7 +258,10 @@ def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
         _migrate_fix_plans(conn)
-        for statement in (*_PROJECTS_MIGRATIONS, *_FIX_RUNS_MIGRATIONS, *_BATCHES_MIGRATIONS):
+        for statement in (
+            *_PROJECTS_MIGRATIONS, *_FIX_RUNS_MIGRATIONS, *_BATCHES_MIGRATIONS,
+            *_DEPENDENCIES_MIGRATIONS,
+        ):
             try:
                 conn.execute(statement)
             except sqlite3.OperationalError:
@@ -643,3 +682,94 @@ def resolved_issue_ids(project_key: str) -> dict[str, int]:
                 for occ in step.get("occurrences") or []:
                     covered.setdefault(occ["issue_id"], batch["id"])
     return covered
+
+
+def batch_status_by_issue(project_key: str) -> dict[str, dict[str, Any]]:
+    """Same shape as `fix_status_by_issue`'s values (pr_url, branch,
+    build_status, test_status, created_at), but for issues resolved through
+    the batch flow instead of the single-issue one - the Issues page's
+    "Fixed" tab must check both, or a batch-created PR never shows there."""
+    covered: dict[str, dict[str, Any]] = {}
+    for batch in resolved_batches(project_key):
+        info = {
+            "pr_url": batch.get("pr_url"),
+            "branch": batch.get("branch"),
+            "build_status": batch.get("build_status"),
+            "test_status": batch.get("test_status"),
+            "created_at": batch.get("created_at"),
+            "batch_id": batch["id"],
+        }
+        for step in batch.get("steps") or []:
+            if step.get("kind") == "mechanical":
+                for item in step.get("applied") or []:
+                    covered.setdefault(item["issue_id"], info)
+            else:
+                for occ in step.get("occurrences") or []:
+                    covered.setdefault(occ["issue_id"], info)
+    return covered
+
+
+# --- dependencies --------------------------------------------------------
+
+
+def replace_dependencies(project_key: str, findings: list[dict[str, Any]]) -> int:
+    """A dependency scan is authoritative for this project: the previous
+    scan's rows are dropped and replaced, same as `replace_issues`."""
+    stamp = now()
+    rows = [
+        {
+            "project_key": project_key,
+            "ecosystem": f.get("ecosystem"),
+            "package": f.get("package"),
+            "current_version": f.get("current_version"),
+            "fixed_version": f.get("fixed_version"),
+            "severity": f.get("severity"),
+            "advisory_id": f.get("advisory_id"),
+            "manifest_path": f.get("manifest_path"),
+            "is_direct": 1 if f.get("direct") else 0,
+            "bump_kind": f.get("bump_kind"),
+            "recommendation": f.get("recommendation"),
+            "summary": f.get("summary"),
+            "reason": f.get("reason"),
+            "scanned_at": stamp,
+        }
+        for f in findings
+    ]
+    with connect() as conn:
+        conn.execute("DELETE FROM dependencies WHERE project_key = ?", (project_key,))
+        if rows:
+            conn.executemany(
+                "INSERT INTO dependencies "
+                "(project_key, ecosystem, package, current_version, fixed_version, "
+                " severity, advisory_id, manifest_path, is_direct, bump_kind, "
+                " recommendation, summary, reason, scanned_at) "
+                "VALUES "
+                "(:project_key, :ecosystem, :package, :current_version, :fixed_version, "
+                " :severity, :advisory_id, :manifest_path, :is_direct, :bump_kind, "
+                " :recommendation, :summary, :reason, :scanned_at)",
+                rows,
+            )
+    return len(rows)
+
+
+def list_dependencies(project_key: str) -> list[dict[str, Any]]:
+    with connect() as conn:
+        rows = _rows(
+            conn.execute(
+                "SELECT * FROM dependencies WHERE project_key = ? ORDER BY id", (project_key,)
+            )
+        )
+    for row in rows:
+        row["direct"] = bool(row.pop("is_direct"))
+    rows.sort(key=lambda d: DEP_SEVERITY_RANK.get(d["severity"], 9))
+    return rows
+
+
+def dependencies_scanned_at(project_key: str) -> str | None:
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT scanned_at FROM dependencies WHERE project_key = ? "
+            "ORDER BY id DESC LIMIT 1",
+            (project_key,),
+        ).fetchone()
+    return row["scanned_at"] if row else None

@@ -196,6 +196,18 @@ def get_facets(project_key: str) -> dict[str, list[str]]:
     return _guard(service.issue_facets, project_key)
 
 
+@app.post("/projects/{project_key}/dependencies/scan")
+def post_dependencies_scan(project_key: str) -> dict[str, Any]:
+    """Check every dependency against known CVEs and whether the fix is a
+    safe (patch/minor) or risky (major) version bump."""
+    return _guard(service.scan_dependencies, project_key)
+
+
+@app.get("/projects/{project_key}/dependencies")
+def get_dependencies(project_key: str) -> dict[str, Any]:
+    return _guard(service.list_dependencies, project_key)
+
+
 @app.get("/issues/{issue_id}")
 def get_issue(issue_id: str) -> dict[str, Any]:
     """Step 3: issue detail, rule description and the code at the reported line."""

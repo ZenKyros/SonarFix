@@ -16,10 +16,6 @@ export default function ProjectsPage() {
   const [cloneBranch, setCloneBranch] = useState("");
   const [busy, setBusy] = useState(null); // which action is in flight
   const [query, setQuery] = useState("");
-  const [onboardSonarUrl, setOnboardSonarUrl] = useState("");
-  const [onboardRepoUrl, setOnboardRepoUrl] = useState("");
-  const [onboardBranch, setOnboardBranch] = useState("");
-  const [onboardRepoPath, setOnboardRepoPath] = useState("");
 
   const load = async () => {
     try {
@@ -97,100 +93,23 @@ export default function ProjectsPage() {
 
   const openPlan = () => navigate(`/projects/${selected.key}/plan`);
 
-  const handleOnboard = () =>
-    run("onboard", "Fetching the project and its issues…", async () => {
-      const result = await api.onboard(
-        onboardSonarUrl.trim(),
-        onboardRepoUrl.trim(),
-        onboardBranch.trim(),
-        onboardRepoPath.trim()
-      );
-      setOnboardSonarUrl("");
-      setOnboardRepoUrl("");
-      setOnboardBranch("");
-      setOnboardRepoPath("");
-      await load();
-      navigate(`/projects/${result.project.key}/issues`, {
-        state: { projectName: result.project.name },
-      });
-    });
-
   return (
     <div className="page">
       <div className="page-head">
         <h1>Projects</h1>
         <p className="subtitle">
-          Connect a SonarQube project to its repository, fetch the issues, then review
-          a plan that fixes what it can without AI.
+          Sync your SonarQube projects, point one at its repository, fetch the
+          issues, then review a plan that fixes what it can without AI.
         </p>
       </div>
 
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
-      <section className="panel onboard-panel">
-        <h2>Start a new project</h2>
-        <p className="caption">
-          Paste the SonarQube project link and the repository to fix it in, and
-          every matching issue will be fetched and listed below.
-        </p>
-        <div className="onboard-grid">
-          <div>
-            <label className="field-label">SonarQube project</label>
-            <input
-              className="text-input"
-              placeholder="https://your-sonar-host/code?id=PROJECT_KEY"
-              value={onboardSonarUrl}
-              onChange={(e) => setOnboardSonarUrl(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="field-label">Repository</label>
-            <input
-              className="text-input"
-              placeholder="Bitbucket repo or project page URL"
-              value={onboardRepoUrl}
-              onChange={(e) => setOnboardRepoUrl(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="field-label">Branch (optional)</label>
-            <input
-              className="text-input"
-              placeholder="defaults to the repo's default branch"
-              value={onboardBranch}
-              onChange={(e) => setOnboardBranch(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="field-label">Local folder (optional)</label>
-            <input
-              className="text-input"
-              placeholder={String.raw`C:\work\my-service (blank = pick one for you)`}
-              value={onboardRepoPath}
-              onChange={(e) => setOnboardRepoPath(e.target.value)}
-            />
-          </div>
-        </div>
-        <p className="caption">
-          Already have it cloned? Point the local folder at that clone and
-          nothing will be re-downloaded.
-        </p>
-        <div className="button-row">
-          <button
-            className="btn btn-primary"
-            onClick={handleOnboard}
-            disabled={!onboardSonarUrl.trim() || !onboardRepoUrl.trim() || busy === "onboard"}
-          >
-            {busy === "onboard" ? "Fetching issues…" : "Fetch issues"}
-          </button>
-        </div>
-      </section>
-
       <div className="toolbar">
         <p className="caption" style={{ margin: 0 }}>
-          Or browse projects already seen on this SonarQube server:
+          Projects already seen on this SonarQube server:
         </p>
-        <button className="btn btn-outline" onClick={handleSync} disabled={busy === "sync"}>
+        <button className="btn btn-primary" onClick={handleSync} disabled={busy === "sync"}>
           {busy === "sync" ? "Syncing…" : "Sync projects from SonarQube"}
         </button>
       </div>
@@ -321,6 +240,28 @@ export default function ProjectsPage() {
                       HTML report
                     </a>
                   </div>
+                </div>
+              </div>
+
+              <div className="setup-step">
+                <span className="setup-num">4</span>
+                <div className="setup-body">
+                  <h3>Dependencies</h3>
+                  <p className="caption">
+                    Checks every package this project depends on against known CVEs, and
+                    whether the fix is a safe (patch/minor) or risky (major) version bump.
+                  </p>
+                  <button
+                    className="btn btn-ghost"
+                    disabled={!selected.repo_path}
+                    onClick={() =>
+                      navigate(`/projects/${selected.key}/dependencies`, {
+                        state: { projectName: selected.name },
+                      })
+                    }
+                  >
+                    View dependencies
+                  </button>
                 </div>
               </div>
             </div>
