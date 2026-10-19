@@ -19,3 +19,4 @@ data/backups/
 data/model_override.txt
 .sonarfix/
 demo/
+*.zip

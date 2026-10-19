@@ -141,6 +141,13 @@ def get_projects() -> list[dict[str, Any]]:
     return service.list_projects()
 
 
+@app.get("/dashboard")
+def get_dashboard() -> dict[str, Any]:
+    """Every project's issue/fix/PR/dependency status in one call, built
+    from local snapshots - fast enough to be a landing page."""
+    return _guard(service.dashboard_summary)
+
+
 @app.post("/projects/sync")
 def post_projects_sync() -> list[dict[str, Any]]:
     """Step 1: refresh the project list from SonarQube."""

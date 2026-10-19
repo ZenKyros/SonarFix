@@ -54,6 +54,10 @@ export default function Layout({ children }) {
             <span className="brand-product">SonarFix</span>
           </span>
         </Link>
+        <nav className="topbar-nav">
+          <Link to="/dashboard">Dashboard</Link>
+          <Link to="/">Projects</Link>
+        </nav>
         {modelInfo?.choices?.length > 0 && (
           <select
             className="model-picker"

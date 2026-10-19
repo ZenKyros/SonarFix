@@ -786,8 +786,6 @@ button, input, select, textarea {
   font-size: 0.86rem;
 }
 
-.recommendation-banner { flex-wrap: wrap; }
-
 /* --- terminal-style build/test log ----------------------------------------- */
 
 .terminal {

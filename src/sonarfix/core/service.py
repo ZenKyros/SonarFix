@@ -19,38 +19,6 @@ class ServiceError(RuntimeError):
     """Something the user can fix: bad config, missing repo, unknown issue."""
 
 
-# Severity/type -> suggested model, a simple rule of thumb: spend more
-# reasoning on issues that are expensive to get wrong (security, blockers),
-# less on routine cleanup. `engine` is informational only today - switching
-# it at runtime isn't wired up yet, unlike the model (see `set_model_override`).
-_HIGH_STAKES_TYPES = {"VULNERABILITY", "SECURITY_HOTSPOT"}
-
-
-def recommend_model(severity: str | None, issue_type: str | None) -> dict[str, Any]:
-    severity = (severity or "").upper()
-    issue_type = (issue_type or "").upper()
-
-    if severity in ("BLOCKER", "CRITICAL") or issue_type in _HIGH_STAKES_TYPES:
-        model = "claude-opus-5-5"
-        engine = "deepagents"
-        reason = "High-stakes issue (blocker/critical severity, or a security vulnerability/hotspot) - worth the deepest reasoning."
-    elif severity == "MAJOR":
-        model = "claude-sonnet-5-5"
-        engine = "deepagents"
-        reason = "Routine but real quality issue - a balanced model is the efficient choice."
-    else:
-        model = "claude-haiku-4-5-20251001"
-        engine = "claude-code"
-        reason = "Low-impact issue (minor/info severity) - a fast, lightweight model is enough."
-
-    return {
-        "model": model,
-        "model_label": CLAUDE_MODELS.get(model, model),
-        "engine": engine,
-        "reason": reason,
-    }
-
-
 def _git(*args: str, cwd: str | Path | None = None) -> str:
     """Run a git command and return stdout, raise on non-zero."""
     result = subprocess.run(
@@ -208,6 +176,83 @@ def issue_facets(project_key: str) -> dict[str, list[str]]:
     return issues_.facets(project_key)
 
 
+_ACTIVE_BATCH_STATUSES = ("queued", "running", "awaiting_build")
+_NEEDS_ATTENTION_BATCH_STATUSES = ("failed", "build_failed")
+
+
+def dashboard_summary() -> dict[str, Any]:
+    """One call, everything the dashboard needs for every project - built
+    from local snapshots (the `issues` table, not a live Sonar fetch per
+    project) since a cross-project overview has to stay fast, the same way
+    the Plan/Batch screens already trust the synced snapshot over a live
+    call."""
+    projects: list[dict[str, Any]] = []
+    totals = {
+        "open_issues": 0, "fixed_issues": 0, "prs_open": 0,
+        "issue_severity": {}, "dependency_severity": {}, "vulnerable_dependencies": 0,
+        "batches_active": 0, "batches_needs_attention": 0,
+    }
+
+    for project in store.list_projects():
+        key = project["key"]
+        issues = store.list_issues(key)
+        fix_status = store.fix_status_by_issue(key)
+        batch_status = store.batch_status_by_issue(key)
+        combined = {**fix_status, **batch_status}
+
+        severity_counts: dict[str, int] = {}
+        fixed_count = 0
+        pr_open_count = 0
+        for issue in issues:
+            severity_counts[issue["severity"]] = severity_counts.get(issue["severity"], 0) + 1
+            found = combined.get(issue["id"])
+            if found:
+                fixed_count += 1
+                if found.get("pr_url"):
+                    pr_open_count += 1
+
+        batches = store.list_batches(key, limit=200)
+        batches_active = sum(1 for b in batches if b["status"] in _ACTIVE_BATCH_STATUSES)
+        batches_needs_attention = sum(
+            1 for b in batches if b["status"] in _NEEDS_ATTENTION_BATCH_STATUSES
+        )
+
+        deps = store.list_dependencies(key)
+        dep_severity_counts: dict[str, int] = {}
+        for dep in deps:
+            dep_severity_counts[dep["severity"]] = dep_severity_counts.get(dep["severity"], 0) + 1
+
+        projects.append({
+            "key": key,
+            "name": project["name"],
+            "repo_configured": bool(project.get("repo_path")),
+            "last_synced_at": project.get("last_synced_at"),
+            "total_issues": len(issues),
+            "open_issues": len(issues) - fixed_count,
+            "fixed_issues": fixed_count,
+            "prs_open": pr_open_count,
+            "issue_severity": severity_counts,
+            "batches_active": batches_active,
+            "batches_needs_attention": batches_needs_attention,
+            "vulnerable_dependencies": len(deps),
+            "dependency_severity": dep_severity_counts,
+            "dependencies_scanned_at": store.dependencies_scanned_at(key),
+        })
+
+        totals["open_issues"] += len(issues) - fixed_count
+        totals["fixed_issues"] += fixed_count
+        totals["prs_open"] += pr_open_count
+        totals["vulnerable_dependencies"] += len(deps)
+        totals["batches_active"] += batches_active
+        totals["batches_needs_attention"] += batches_needs_attention
+        for sev, count in severity_counts.items():
+            totals["issue_severity"][sev] = totals["issue_severity"].get(sev, 0) + count
+        for sev, count in dep_severity_counts.items():
+            totals["dependency_severity"][sev] = totals["dependency_severity"].get(sev, 0) + count
+
+    return {"projects": projects, "totals": totals}
+
+
 def scan_dependencies(project_key: str) -> dict[str, Any]:
     """Check every package this project depends on against known CVEs, and
     whether upgrading to the fixed version is a patch/minor (mechanical) or
@@ -247,7 +292,6 @@ def issue_detail(issue_id: str) -> dict[str, Any]:
         "rule": None,
         "code_context": None,
         "repo_error": None,
-        "recommendation": recommend_model(issue.get("severity"), issue.get("type")),
     }
 
     try:

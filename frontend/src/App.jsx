@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import ProjectsPage from "./pages/ProjectsPage";
+import DashboardPage from "./pages/DashboardPage";
 import PlanPage from "./pages/PlanPage";
 import BatchPage from "./pages/BatchPage";
 import IssuesPage from "./pages/IssuesPage";
@@ -15,6 +16,7 @@ export default function App() {
         <Layout>
           <Routes>
             <Route path="/" element={<ProjectsPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects/:projectKey/plan" element={<PlanPage />} />
             <Route path="/projects/:projectKey/issues" element={<IssuesPage />} />
             <Route path="/projects/:projectKey/dependencies" element={<DependenciesPage />} />

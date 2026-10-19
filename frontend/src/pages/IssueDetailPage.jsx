@@ -17,8 +17,6 @@ export default function IssueDetailPage() {
   const [detail, setDetail] = useState(null);
   const [state, setState] = useState(null);
   const [scm, setScm] = useState(null);
-  const [modelInfo, setModelInfo] = useState(null);
-  const [switchingModel, setSwitchingModel] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null);
   const [feedback, setFeedback] = useState("");
@@ -35,21 +33,6 @@ export default function IssueDetailPage() {
     setState(s);
     if (d.project?.key) {
       api.scmStatus(d.project.key).then(setScm).catch(() => {});
-    }
-    api.getModelSettings().then(setModelInfo).catch(() => {});
-  };
-
-  const useRecommendedModel = async () => {
-    const model = detail?.recommendation?.model;
-    if (!model) return;
-    setSwitchingModel(true);
-    try {
-      const res = await api.setModel(model);
-      setModelInfo((prev) => ({ ...prev, model: res.model }));
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : String(err));
-    } finally {
-      setSwitchingModel(false);
     }
   };
 
@@ -169,24 +152,6 @@ export default function IssueDetailPage() {
           </>
         )}
       </section>
-
-      {detail.recommendation && modelInfo && (
-        <div className="banner banner-warn recommendation-banner">
-          <span>
-            Recommended for this issue: <strong>{detail.recommendation.model_label}</strong>
-            {" · "}
-            {detail.recommendation.engine === "deepagents" ? "deep agent" : "fast agent"}.{" "}
-            {detail.recommendation.reason}
-          </span>
-          {modelInfo.model === detail.recommendation.model ? (
-            <span className="caption">✓ Already selected</span>
-          ) : (
-            <button className="btn btn-outline btn-sm" onClick={useRecommendedModel} disabled={switchingModel}>
-              {switchingModel ? "Switching…" : "Use recommended model"}
-            </button>
-          )}
-        </div>
-      )}
 
       <div className="button-row">
         <button

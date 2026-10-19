@@ -483,3 +483,51 @@
 .dep-chevron { width: 20px; color: var(--text-faint); text-align: center; }
 .dep-detail-row td { background: var(--bg); border-bottom: 1px solid var(--border-soft); }
 .dep-reason { margin: 0; font-size: 0.86rem; color: var(--text-muted); line-height: 1.55; max-width: 820px; }
+
+/* dashboard page */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) { .stat-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+.stat-value { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-label { font-size: 0.78rem; color: var(--text-faint); font-weight: 600; }
+.stat-good .stat-value { color: var(--green); }
+.stat-warn .stat-value { color: var(--amber); }
+.stat-bad .stat-value { color: var(--danger); }
+
+.dash-breakdowns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) { .dash-breakdowns { grid-template-columns: 1fr; } }
+.dash-breakdowns .card h3 { margin: 0 0 12px; font-size: 0.95rem; }
+.dash-breakdowns .sev-strip { margin-bottom: 0; }
+
+.mini-breakdown { display: flex; flex-wrap: wrap; gap: 4px; }
+.mini-pill { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--muted-soft); color: var(--text-muted); white-space: nowrap; }
+.mini-BLOCKER, .mini-critical { background: #fbe0e0; color: #8b0000; }
+.mini-CRITICAL, .mini-high { background: #fbe4e6; color: #d64545; }
+.mini-MAJOR, .mini-moderate { background: #fff1d6; color: #9a5b00; }
+.mini-MINOR, .mini-low { background: #e3edf8; color: #3b82c4; }
+.mini-INFO, .mini-unknown { background: var(--muted-soft); color: var(--text-faint); }
+
+.checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; color: var(--text-muted); cursor: pointer; }
+
+.topbar-nav { display: flex; gap: 18px; margin-left: 8px; }
+.topbar-nav a { color: rgba(255, 255, 255, 0.85); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+.topbar-nav a:hover { color: #fff; text-decoration: underline; }

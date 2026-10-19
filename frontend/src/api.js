@@ -53,6 +53,7 @@ export const api = {
   setModel: (model) => request("POST", "/settings/model", { json: { model } }),
 
   listProjects: () => request("GET", "/projects"),
+  dashboard: () => request("GET", "/dashboard"),
   syncProjects: () => request("POST", "/projects/sync"),
   setRepoPath: (key, repoPath) =>
     request("PUT", `/projects/${key}/repo`, { json: { repo_path: repoPath } }),
