@@ -2,8 +2,9 @@
 before we propose a PR.
 
 Finds the project (a .csproj/.vbproj for C#/.NET, a pom.xml for Maven, a
-build.gradle(.kts) for Gradle, a CMakeLists.txt for CMake, or a .vcxproj for
-C++/Visual Studio) owning each file the fix touched, and builds (then tests)
+build.gradle(.kts) for Gradle, a CMakeLists.txt for CMake, a .vcxproj for
+C++/Visual Studio, or a package.json for npm/JavaScript/TypeScript/Angular)
+owning each file the fix touched, and builds (then tests)
 just those - the "blast radius". Also reports the build artifact each project
 produces (a .dll/.exe/.jar/...), so a reviewer can see what's actually shipping
 without reading every changed file.
@@ -11,6 +12,8 @@ without reading every changed file.
 
 from __future__ import annotations
 
+import json
+import os
 import re
 import shutil
 import subprocess
@@ -27,6 +30,8 @@ _CPP_GLOBS = ("*.vcxproj",)
 _MAVEN_MARKER = "pom.xml"
 _GRADLE_MARKERS = ("build.gradle", "build.gradle.kts")
 _CMAKE_MARKER = "CMakeLists.txt"
+_NPM_MARKER = "package.json"
+_NPM_PLACEHOLDER_TEST = "no test specified"
 
 
 def _project_for(repo_root: Path, file_path: str) -> tuple[str, Path] | None:
@@ -51,6 +56,9 @@ def _project_for(repo_root: Path, file_path: str) -> tuple[str, Path] | None:
         cmake = current / _CMAKE_MARKER
         if cmake.is_file():
             return "cmake", cmake
+        npm = current / _NPM_MARKER
+        if npm.is_file():
+            return "npm", npm
         if current == repo_root or current.parent == current:
             return None
         current = current.parent
@@ -114,11 +122,15 @@ class _Commands:
     """
 
     def __init__(
-        self, build: list[list[str]] | None, test: list[list[str]] | None, note: str = ""
+        self, build: list[list[str]] | None, test: list[list[str]] | None,
+        note: str = "", skip: bool = False,
     ) -> None:
         self.build = build
         self.test = test
         self.note = note
+        # True when there is genuinely nothing to run (e.g. a plain-JS package
+        # with no build script) - reported, but never counted as a failure.
+        self.skip = skip
 
 
 def _dotnet_commands(csproj: Path) -> _Commands:
@@ -181,7 +193,71 @@ def _gradle_commands(marker: Path, repo_root: Path) -> _Commands:
     )
 
 
-def _commands_for(kind: str, marker: Path, repo_root: Path) -> _Commands:
+def _read_package_json(pkg_json: Path) -> dict[str, Any]:
+    try:
+        data = json.loads(pkg_json.read_text(encoding="utf-8-sig", errors="replace"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _is_angular(pkg_json: Path, data: dict[str, Any]) -> bool:
+    deps = {**(data.get("dependencies") or {}), **(data.get("devDependencies") or {})}
+    return (pkg_json.parent / "angular.json").is_file() or "@angular/core" in deps
+
+
+def _npm_commands(pkg_json: Path, changed: list[str], repo_root: Path) -> _Commands:
+    """npm/JavaScript/TypeScript/Angular: install if needed, then the project's
+    own `build` script; failing that a plain `tsc --noEmit`, or a `node --check`
+    syntax pass over the changed .js files. Angular unit tests need a browser
+    (Karma), so Angular is build-verified only; everything else runs `npm test`."""
+    npm = shutil.which("npm") or shutil.which("npm.cmd")
+    if not npm:
+        return _Commands(build=None, test=None, note="'npm' is not on PATH.")
+    data = _read_package_json(pkg_json)
+    scripts = data.get("scripts") or {}
+    project_dir = pkg_json.parent
+
+    check: list[list[str]] = []
+    if "build" in scripts:
+        check = [[npm, "run", "build"]]
+    elif (project_dir / "tsconfig.json").is_file():
+        check = [[npm, "exec", "--", "tsc", "--noEmit"]]
+    else:
+        node = shutil.which("node")
+        js_files = [
+            str(repo_root / f) for f in changed
+            if f.lower().endswith((".js", ".mjs", ".cjs")) and (repo_root / f).is_file()
+        ]
+        if node and js_files:
+            check = [[node, "--check", f] for f in js_files]
+    if not check:
+        return _Commands(
+            build=None, test=None, skip=True,
+            note="package.json has no build script, tsconfig.json or plain .js files to check.",
+        )
+
+    install: list[list[str]] = []
+    needs_install = "build" in scripts or (project_dir / "tsconfig.json").is_file()
+    if needs_install and not (project_dir / "node_modules").is_dir():
+        has_lock = (project_dir / "package-lock.json").is_file()
+        install = [[npm, "ci" if has_lock else "install", "--no-audit", "--no-fund"]]
+
+    test_script = str(scripts.get("test", ""))
+    run_tests = bool(test_script) and _NPM_PLACEHOLDER_TEST not in test_script
+    if _is_angular(pkg_json, data):
+        run_tests = False
+    return _Commands(
+        build=install + check,
+        test=[[npm, "test"]] if run_tests else None,
+    )
+
+
+def _commands_for(
+    kind: str, marker: Path, repo_root: Path, changed: list[str] | None = None,
+) -> _Commands:
+    if kind == "npm":
+        return _npm_commands(marker, changed or [], repo_root)
     if kind == "dotnet":
         return _dotnet_commands(marker)
     if kind == "cpp-vs":
@@ -252,8 +328,19 @@ def _gradle_artifact(marker: Path) -> dict[str, str]:
     return {"name": name, "file": f"{name}.jar", "kind": "java package"}
 
 
+def _npm_artifact(pkg_json: Path) -> dict[str, str]:
+    data = _read_package_json(pkg_json)
+    name = str(data.get("name") or pkg_json.parent.name)
+    if _is_angular(pkg_json, data):
+        return {"name": name, "file": "dist/ (Angular bundle)", "kind": "web bundle"}
+    if "build" in (data.get("scripts") or {}):
+        return {"name": name, "file": "build output (dist/)", "kind": "web bundle"}
+    return {"name": name, "file": f"{name} (npm package)", "kind": "npm package"}
+
+
 def _artifact_for(kind: str, marker: Path) -> dict[str, str]:
     artifact = {
+        "npm": _npm_artifact,
         "dotnet": _dotnet_artifact,
         "cpp-vs": _cpp_vs_artifact,
         "cmake": _cmake_artifact,
@@ -267,7 +354,7 @@ def _artifact_for(kind: str, marker: Path) -> dict[str, str]:
 def _unsupported_note(unsupported: list[str]) -> str:
     return (
         "Build verification covers C#/.NET, C++ (CMake or Visual Studio), "
-        "Maven and Gradle projects. "
+        "Maven, Gradle and npm (JavaScript/TypeScript/Angular) projects. "
         f"{len(unsupported)} changed file(s) are in another project type and "
         f"were not built: {', '.join(unsupported)}"
     )
@@ -282,6 +369,7 @@ def _run_steps(steps: list[list[str]], root: Path, timeout: int) -> tuple[bool, 
             result = subprocess.run(
                 step, cwd=str(root), capture_output=True, text=True,
                 encoding="utf-8", errors="replace", timeout=timeout,
+                env={**os.environ, "CI": "true"},  # test runners must not sit in watch mode
             )
         except subprocess.TimeoutExpired:
             logs.append(f"$ {' '.join(step)}\nTimed out after {timeout}s.")
@@ -371,7 +459,11 @@ def verify(repo_path: str, changed_files: list[str]) -> dict[str, Any]:
 
     for kind, marker in projects.values():
         rel = marker.relative_to(root)
-        commands = _commands_for(kind, marker, root)
+        commands = _commands_for(kind, marker, root, project_files.get(str(marker)))
+
+        if not commands.build and commands.skip:
+            build_logs.append(f"### {rel}\n{commands.note}")
+            continue
 
         if not commands.build:
             build_logs.append(f"### {rel}\n{commands.note}")

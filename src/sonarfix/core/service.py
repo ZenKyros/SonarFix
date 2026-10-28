@@ -190,6 +190,7 @@ def dashboard_summary() -> dict[str, Any]:
     totals = {
         "open_issues": 0, "fixed_issues": 0, "prs_open": 0,
         "issue_severity": {}, "dependency_severity": {}, "vulnerable_dependencies": 0,
+        "outdated_dependencies": 0,
         "batches_active": 0, "batches_needs_attention": 0,
     }
 
@@ -217,7 +218,9 @@ def dashboard_summary() -> dict[str, Any]:
             1 for b in batches if b["status"] in _NEEDS_ATTENTION_BATCH_STATUSES
         )
 
-        deps = store.list_dependencies(key)
+        all_deps = store.list_dependencies(key)
+        deps = [d for d in all_deps if d["severity"] != "none"]
+        outdated = len(all_deps) - len(deps)
         dep_severity_counts: dict[str, int] = {}
         for dep in deps:
             dep_severity_counts[dep["severity"]] = dep_severity_counts.get(dep["severity"], 0) + 1
@@ -235,6 +238,7 @@ def dashboard_summary() -> dict[str, Any]:
             "batches_active": batches_active,
             "batches_needs_attention": batches_needs_attention,
             "vulnerable_dependencies": len(deps),
+            "outdated_dependencies": outdated,
             "dependency_severity": dep_severity_counts,
             "dependencies_scanned_at": store.dependencies_scanned_at(key),
         })
@@ -243,6 +247,7 @@ def dashboard_summary() -> dict[str, Any]:
         totals["fixed_issues"] += fixed_count
         totals["prs_open"] += pr_open_count
         totals["vulnerable_dependencies"] += len(deps)
+        totals["outdated_dependencies"] += outdated
         totals["batches_active"] += batches_active
         totals["batches_needs_attention"] += batches_needs_attention
         for sev, count in severity_counts.items():
@@ -270,6 +275,24 @@ def scan_dependencies(project_key: str) -> dict[str, Any]:
     findings = deps_.scan_project(repo_path)
     store.replace_dependencies(project_key, findings)
     return {"count": len(findings), "dependencies": store.list_dependencies(project_key)}
+
+
+def analyze_dependency(dep_id: int, target_version: str | None = None) -> dict[str, Any]:
+    """Trial-upgrade one tracked dependency in a scratch copy of the repo and
+    store the verdict (safe / caution / risky), what would change, and what
+    breaks. Human-triggered: it copies the repo and runs a real build."""
+    dep = store.get_dependency(dep_id)
+    if not dep:
+        raise ServiceError(f"Unknown dependency: {dep_id}")
+    project = store.get_project(dep["project_key"])
+    repo_path = (project or {}).get("repo_path")
+    if not repo_path:
+        raise ServiceError("No local repository configured for this project yet.")
+    from . import deps_upgrade
+
+    result = deps_upgrade.analyze_upgrade(repo_path, dep, target_version)
+    store.save_dependency_analysis(dep["project_key"], dep, result)
+    return result
 
 
 def list_dependencies(project_key: str) -> dict[str, Any]:

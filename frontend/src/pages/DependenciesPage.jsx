@@ -4,13 +4,14 @@ import { api, ApiError } from "../api";
 import ErrorBanner from "../components/ErrorBanner";
 import { useStatus } from "../status";
 
-const DEP_SEVERITIES = ["critical", "high", "moderate", "low", "unknown"];
+const DEP_SEVERITIES = ["critical", "high", "moderate", "low", "unknown", "none"];
 const DEP_SEVERITY_LABEL = {
   critical: "Critical",
   high: "High",
   moderate: "Moderate",
   low: "Low",
   unknown: "Unknown",
+  none: "Outdated",
 };
 const DEP_SEVERITY_COLOR = {
   critical: "#8b0000",
@@ -18,6 +19,7 @@ const DEP_SEVERITY_COLOR = {
   moderate: "#e08e2b",
   low: "#3b82c4",
   unknown: "#8a8f98",
+  none: "#6b7a99",
 };
 
 function DepSeverityBadge({ severity }) {
@@ -29,7 +31,23 @@ function DepSeverityBadge({ severity }) {
   );
 }
 
-function RecommendationTag({ recommendation, bumpKind }) {
+const VERDICT_LABEL = {
+  safe: "Safe to upgrade",
+  caution: "Upgrade with care",
+  risky: "Risky - breaks",
+  unknown: "Needs investigation",
+};
+
+function RecommendationTag({ recommendation, bumpKind, analysis }) {
+  if (analysis?.verdict)
+    return (
+      <span
+        className={`verdict-tag verdict-${analysis.verdict}`}
+        title={`Verified by a trial upgrade: ${analysis.action}`}
+      >
+        {VERDICT_LABEL[analysis.verdict]}
+      </span>
+    );
   if (recommendation === "upgrade")
     return (
       <span
@@ -49,6 +67,70 @@ function RecommendationTag({ recommendation, bumpKind }) {
   );
 }
 
+function AnalysisPanel({ analysis }) {
+  const a = analysis;
+  const ran = a.build_status != null;
+  return (
+    <div className="dep-analysis">
+      <div className="dep-verdict">
+        <span className={`verdict-tag verdict-${a.verdict}`}>{VERDICT_LABEL[a.verdict]}</span>
+        <strong>{a.action}</strong>
+        <span className="caption">
+          target {a.target_version || "?"} ({a.bump_kind} bump) · analysed in {a.duration_s}s
+          {a.analyzed_at ? ` · ${a.analyzed_at}` : ""}
+        </span>
+      </div>
+      <h4>Why</h4>
+      <ul>
+        {(a.reasons || []).map((r, i) => (
+          <li key={i}>{r}</li>
+        ))}
+      </ul>
+      <h4>What happens if you upgrade</h4>
+      <ul>
+        <li>
+          Build:{" "}
+          {ran ? <b>{a.build_status}</b> : "not run"}
+          {a.test_status ? <> · Tests: <b>{a.test_status}</b></> : " · Tests: none ran"}
+        </li>
+        <li>
+          Code that uses it: {a.usage?.count || 0} source file(s)
+          {a.usage?.files?.length ? ` - ${a.usage.files.slice(0, 5).join(", ")}${a.usage.count > 5 ? ", …" : ""}` : ""}
+        </li>
+        {(a.changed_packages || []).length > 0 && (
+          <li>{a.changed_packages.length} package(s) change in the lockfile (see below)</li>
+        )}
+        {a.changelog && (
+          <li>
+            Release notes:{" "}
+            <a href={a.changelog} target="_blank" rel="noreferrer">
+              {a.changelog}
+            </a>
+          </li>
+        )}
+      </ul>
+      {(a.errors || []).length > 0 && (
+        <>
+          <h4>Errors after upgrade</h4>
+          <pre>{a.errors.join("\n")}</pre>
+        </>
+      )}
+      {a.manifest_diff && (
+        <>
+          <h4>Manifest change</h4>
+          <pre>{a.manifest_diff}</pre>
+        </>
+      )}
+      {(a.changed_packages || []).length > 0 && (
+        <>
+          <h4>Packages that move with it</h4>
+          <pre>{a.changed_packages.slice(0, 60).join("\n")}</pre>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DependenciesPage() {
   const { projectKey } = useParams();
   const location = useLocation();
@@ -65,6 +147,8 @@ export default function DependenciesPage() {
   const [ecosystem, setEcosystem] = useState("All");
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState({});
+  const [analyzing, setAnalyzing] = useState(null);
+  const [targets, setTargets] = useState({});
 
   const load = () =>
     api
@@ -98,6 +182,21 @@ export default function DependenciesPage() {
     }
   };
 
+  const handleAnalyze = async (d) => {
+    setAnalyzing(d.id);
+    try {
+      await track(`Trial-upgrading ${d.package} in a scratch copy…`, () =>
+        api.analyzeDependency(d.id, targets[d.id]),
+      );
+      setError(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setAnalyzing(null);
+    }
+  };
+
   const counts = useMemo(() => {
     const c = {};
     for (const d of deps) c[d.severity] = (c[d.severity] || 0) + 1;
@@ -124,9 +223,10 @@ export default function DependenciesPage() {
         </button>
         <h1>{projectName} · Dependencies</h1>
         <p className="subtitle">
-          Every package with a known vulnerability, cross-checked against the fixed version -
-          a patch/minor bump is flagged safe to apply, a major bump is flagged for review since
-          it can change behaviour even when it still compiles.
+          Every package with a known vulnerability, plus direct dependencies that are behind
+          their latest release. Open a row and click "Analyze upgrade" to trial the upgrade in
+          a scratch copy of the repo - SonarFix rebuilds and retests there and tells you whether
+          it is safe, what changes, and what breaks. Your working tree is never touched.
           {scannedAt && ` Last scanned ${scannedAt}.`}
         </p>
       </div>
@@ -186,7 +286,7 @@ export default function DependenciesPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="empty">
-          No vulnerable dependencies match these filters.
+          No dependencies match these filters.
           {filtersActive && (
             <div>
               <button
@@ -233,20 +333,47 @@ export default function DependenciesPage() {
                     </td>
                     <td>{d.ecosystem}</td>
                     <td>
-                      {d.current_version} → {d.fixed_version || "?"}
+                      {d.current_version} → {d.fixed_version || d.latest_version || "?"}
+                      {d.fixed_version && d.latest_version && d.latest_version !== d.fixed_version && (
+                        <div className="caption">latest: {d.latest_version}</div>
+                      )}
                     </td>
                     <td>
                       <DepSeverityBadge severity={d.severity} />
                     </td>
                     <td className="caption">{d.advisory_id}</td>
                     <td>
-                      <RecommendationTag recommendation={d.recommendation} bumpKind={d.bump_kind} />
+                      <RecommendationTag
+                        recommendation={d.recommendation}
+                        bumpKind={d.bump_kind}
+                        analysis={d.analysis}
+                      />
                     </td>
                   </tr>
                   {isOpen && (
                     <tr className="dep-detail-row">
                       <td colSpan={7}>
                         <p className="dep-reason">{d.reason || "No further detail available."}</p>
+                        {d.analysis && <AnalysisPanel analysis={d.analysis} />}
+                        <div className="dep-actions">
+                          <button
+                            className="btn btn-primary btn-sm"
+                            disabled={analyzing !== null}
+                            onClick={() => handleAnalyze(d)}
+                          >
+                            {analyzing === d.id
+                              ? "Analyzing…"
+                              : d.analysis
+                                ? "Re-analyze upgrade"
+                                : "Analyze upgrade"}
+                          </button>
+                          <input
+                            className="text-input"
+                            placeholder={`target (${d.fixed_version || d.latest_version || "version"})`}
+                            value={targets[d.id] || ""}
+                            onChange={(e) => setTargets({ ...targets, [d.id]: e.target.value })}
+                          />
+                        </div>
                       </td>
                     </tr>
                   )}

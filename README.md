@@ -257,6 +257,19 @@ runs during the parent's initialization, before fields are set up, causing nullâ
 5. Build verification runs (rebuilds only the blast radius)
 6. PR is opened on Bitbucket Server (for human review, never auto-merged)
 
+### Dependency tracker and upgrade analysis
+
+Open a project's **Dependencies** page and click **Scan dependencies**. SonarFix lists every package with a known
+vulnerability (NuGet, npm, Maven, Gradle) *and* every direct dependency behind its latest release.
+
+Expand a row and click **Analyze upgrade**. SonarFix copies the repo to a scratch folder, upgrades just that package
+there, then rebuilds and retests the owning project. You get a verdict - **Safe**, **Upgrade with care** or
+**Risky (breaks)** - plus the manifest diff, the packages that move with it (npm), compiler/test errors, the source files
+that import the package, and a link to the release notes. Your working tree is never modified.
+
+Build verification (used for fixes and for upgrade trials) covers C#/.NET, C++, Maven, Gradle and npm
+(JavaScript, TypeScript, Angular - Angular is build-verified only since its tests need a browser).
+
 ### Download HTML Report
 
 Click **"Download HTML report"** to export a summary of all issues, fixes applied, and status.
@@ -478,7 +491,7 @@ Some rules require deeper analysis. Switch to **Claude Opus 5** for those:
 
 ```env
 # .env
-SONARFIX_MODEL=claude-opus-5    # For complex fixes
+SONARFIX_MODEL=claude-opus-5-5    # For complex fixes
 ```
 
 **Cost vs. Speed:**

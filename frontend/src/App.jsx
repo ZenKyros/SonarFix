@@ -7,6 +7,7 @@ import BatchPage from "./pages/BatchPage";
 import IssuesPage from "./pages/IssuesPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
 import DependenciesPage from "./pages/DependenciesPage";
+import SettingsPage from "./pages/SettingsPage";
 import { StatusProvider } from "./status";
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <Layout>
           <Routes>
             <Route path="/" element={<ProjectsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects/:projectKey/plan" element={<PlanPage />} />
             <Route path="/projects/:projectKey/issues" element={<IssuesPage />} />

@@ -5,13 +5,23 @@ from __future__ import annotations
 import json
 import os
 import shlex
+import sys
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+if getattr(sys, "frozen", False):
+    # Packaged .exe: read-only resources unpack to _MEIPASS, while the database,
+    # .env and run files need a folder the user can write to.
+    RESOURCE_ROOT = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+    PROJECT_ROOT = (
+        Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "SonarFix"
+    )
+    PROJECT_ROOT.mkdir(parents=True, exist_ok=True)
+else:
+    PROJECT_ROOT = RESOURCE_ROOT = Path(__file__).resolve().parents[3]
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -225,7 +235,7 @@ def get_settings() -> Settings:
 
     provider = _choice_env("SONARFIX_LLM_PROVIDER", "anthropic", PROVIDERS)
     default_model = {
-        "anthropic": "claude-opus-5",
+        "anthropic": "claude-sonnet-5-5",
         "ollama": "qwen2.5-coder:14b",
         "openai-compatible": "",
     }[provider]
@@ -251,7 +261,7 @@ def get_settings() -> Settings:
             os.environ.get("SONARFIX_CLAUDE_CODE_PERMISSION_MODE") or "acceptEdits"
         ).strip(),
         db_path=db_path,
-        prompts_dir=PROJECT_ROOT / "prompts",
+        prompts_dir=RESOURCE_ROOT / "prompts",
         api_url=os.environ.get("SONARFIX_API_URL", "http://127.0.0.1:8000")
         .strip()
         .rstrip("/"),

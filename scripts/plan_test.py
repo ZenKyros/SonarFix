@@ -189,6 +189,11 @@ def test_batch() -> int:
     batch_id = batch.create(PROJECT, mech, ["ai:csharpsquid:S3776"], approve_ai=True,
                             notes="Keep method names stable.")
     batch.run(batch_id)
+    batch.build.verify = lambda *_a, **_k: {
+        "status": "passed", "success": True, "output": "stub build", "test_status": None,
+        "test_output": None, "artifacts": None,
+    }
+    batch.request_build(batch_id)
     b = store.get_batch(batch_id)
     check("batch ready", b["status"] == "ready", f"{b['status']} {b.get('error')}")
     check("working tree back on base", git("rev-parse", "--abbrev-ref", "HEAD").strip() == "main")

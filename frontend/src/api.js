@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
 // Agent runs (analyze/approve) can legitimately take several minutes.
 const TIMEOUT_MS = 900_000;
@@ -6,7 +6,7 @@ const TIMEOUT_MS = 900_000;
 export class ApiError extends Error {}
 
 async function request(method, path, { json, params } = {}) {
-  const url = new URL(`${API_URL}${path}`);
+  const url = new URL(path, API_URL || window.location.origin);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && value !== "") {
@@ -27,7 +27,11 @@ async function request(method, path, { json, params } = {}) {
       signal: controller.signal,
     });
   } catch (err) {
-    throw new ApiError(`Cannot reach the SonarFix API at ${API_URL}: ${err.message}`);
+    throw new ApiError(
+      API_URL
+        ? `Cannot reach the SonarFix API at ${API_URL}: ${err.message}`
+        : "Lost connection to SonarFix - it may have been closed. Start SonarFix.exe again (keep its window open) and reload this page."
+    );
   } finally {
     clearTimeout(timer);
   }
@@ -49,6 +53,12 @@ async function request(method, path, { json, params } = {}) {
 
 export const api = {
   health: () => request("GET", "/health"),
+  setupStatus: () => request("GET", "/setup/status"),
+  saveCredentials: (body) => request("PUT", "/setup/credentials", { json: body }),
+  testSonar: () => request("POST", "/setup/test-sonar"),
+  testClaude: () => request("POST", "/setup/test-claude"),
+  installClaude: () => request("POST", "/setup/claude/install"),
+  loginClaude: () => request("POST", "/setup/claude/login"),
   getModelSettings: () => request("GET", "/settings/model"),
   setModel: (model) => request("POST", "/settings/model", { json: { model } }),
 
@@ -67,6 +77,10 @@ export const api = {
 
   listDependencies: (key) => request("GET", `/projects/${key}/dependencies`),
   scanDependencies: (key) => request("POST", `/projects/${key}/dependencies/scan`),
+  analyzeDependency: (depId, targetVersion) =>
+    request("POST", `/dependencies/${depId}/analyze`, {
+      json: { target_version: targetVersion || null },
+    }),
 
   cloneRepo: (key, url, branch) =>
     request("POST", `/projects/${key}/clone`, { json: { url, branch: branch || null } }),

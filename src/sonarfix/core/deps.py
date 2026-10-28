@@ -47,6 +47,7 @@ class DependencyFinding:
     recommendation: str     # "upgrade" | "review"
     summary: str = ""       # one-line description of the vulnerability itself
     reason: str = ""        # plain-English explanation of the recommendation
+    latest_version: str = ""  # newest stable release in the registry, if known
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -264,6 +265,16 @@ def _scan_dotnet(csproj_files: list[Path], repo_root: Path) -> list[DependencyFi
 # --- npm ------------------------------------------------------------------
 
 
+def _npm_installed_version(project_dir: Path, name: str) -> str:
+    """The version actually in node_modules - npm audit only reports the
+    vulnerable *range*, which can't be classified as a patch/minor/major bump."""
+    try:
+        data = json.loads((project_dir / "node_modules" / name / "package.json").read_text(encoding="utf-8"))
+        return str(data.get("version") or "")
+    except (OSError, ValueError):
+        return ""
+
+
 def _scan_npm(package_json_files: list[Path], repo_root: Path) -> list[DependencyFinding]:
     npm = shutil.which("npm") or shutil.which("npm.cmd")
     if not npm:
@@ -300,7 +311,8 @@ def _scan_npm(package_json_files: list[Path], repo_root: Path) -> list[Dependenc
                     break
             findings.append(
                 _finding(
-                    "npm", name, vuln.get("range", "") or "installed", fixed_version,
+                    "npm", name, _npm_installed_version(project_dir, name)
+                    or vuln.get("range", "") or "installed", fixed_version,
                     vuln.get("severity", "unknown"), advisory_id, rel_manifest,
                     direct=bool(vuln.get("isDirect")),
                     summary=npm_summary,
@@ -419,5 +431,15 @@ def scan_project(repo_path: str) -> list[dict[str, Any]]:
 
     gradle_files = _walk_manifests(root, ("build.gradle", "build.gradle.kts"))
     findings += _scan_manifest_ecosystem(gradle_files, root, "Gradle", _GRADLE_DEP_RE)
+
+    # Track what is merely outdated too, and note the latest release on every row.
+    from . import deps_upgrade
+
+    try:
+        findings += deps_upgrade.enrich_and_find_outdated(
+            root, findings, deps_upgrade.manifests_for(root)
+        )
+    except Exception:  # noqa: BLE001 - registry lookups are best-effort
+        pass
 
     return [f.to_dict() for f in findings]

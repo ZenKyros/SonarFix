@@ -2,17 +2,26 @@
 
 from __future__ import annotations
 
+import mimetypes
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from ..core import batch, engine, planner, report, scm, service, store
-from ..core.config import CLAUDE_MODELS, ConfigError, get_settings, set_model_override
+from ..core import batch, engine, planner, report, scm, service, setup, sonar, store
+from ..core.config import (
+    CLAUDE_MODELS,
+    RESOURCE_ROOT,
+    ConfigError,
+    get_settings,
+    set_model_override,
+)
 from ..core.repo import RepoError
 from ..core.service import ServiceError
 from ..core.sonar import SonarError
@@ -136,6 +145,72 @@ def post_model_settings(body: ModelBody) -> dict[str, Any]:
     return _guard(set_model_override, body.model) or get_model_settings()
 
 
+class CredentialsBody(BaseModel):
+    sonar_url: str | None = None
+    sonar_token: str | None = None
+    sonar_org: str | None = None
+    bitbucket_username: str | None = None
+    bitbucket_token: str | None = None
+
+
+@app.get("/setup/status")
+def get_setup_status() -> dict[str, Any]:
+    """What the Settings page shows: stored credentials (never the tokens) and Claude CLI state."""
+    creds = setup.credentials_status()
+    claude = setup.claude_status()
+    return {
+        "credentials": creds,
+        "claude": claude,
+        "ready": bool(
+            creds["sonar_url"]
+            and creds["sonar_token_set"]
+            and claude["installed"]
+            and claude["logged_in"]
+        ),
+    }
+
+
+@app.put("/setup/credentials")
+def put_credentials(body: CredentialsBody) -> dict[str, Any]:
+    """Save SonarQube / Bitbucket settings. Blank fields keep the stored value."""
+    setup.save_credentials(body.model_dump())
+    return get_setup_status()
+
+
+@app.post("/setup/test-sonar")
+def post_test_sonar() -> dict[str, Any]:
+    try:
+        projects = sonar.list_projects()
+    except Exception as exc:  # noqa: BLE001 - unreachable host, bad TLS, etc. are the user's to fix
+        raise HTTPException(status_code=400, detail=f"Could not reach SonarQube: {exc}") from exc
+    return {"ok": True, "projects": len(projects)}
+
+
+@app.post("/setup/test-claude")
+def post_test_claude() -> dict[str, str]:
+    """Round-trip one tiny prompt through Claude Code to confirm sign-in works."""
+    import asyncio
+
+    from ..core import claude_code
+
+    try:
+        reply = asyncio.run(claude_code.ping())
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"Claude Code test failed: {exc}") from exc
+    return {"reply": reply}
+
+
+@app.post("/setup/claude/install")
+def post_claude_install() -> dict[str, Any]:
+    return _guard(setup.install_claude)
+
+
+@app.post("/setup/claude/login")
+def post_claude_login() -> dict[str, str]:
+    _guard(setup.start_claude_login)
+    return {"status": "started"}
+
+
 @app.get("/projects")
 def get_projects() -> list[dict[str, Any]]:
     return service.list_projects()
@@ -208,6 +283,19 @@ def post_dependencies_scan(project_key: str) -> dict[str, Any]:
     """Check every dependency against known CVEs and whether the fix is a
     safe (patch/minor) or risky (major) version bump."""
     return _guard(service.scan_dependencies, project_key)
+
+
+class AnalyzeDependencyBody(BaseModel):
+    target_version: str | None = None
+
+
+@app.post("/dependencies/{dep_id}/analyze")
+def post_dependency_analyze(
+    dep_id: int, body: AnalyzeDependencyBody | None = None,
+) -> dict[str, Any]:
+    """Trial-upgrade one dependency in a scratch copy: does it build, do tests
+    pass, what changes, is it safe."""
+    return _guard(service.analyze_dependency, dep_id, body.target_version if body else None)
 
 
 @app.get("/projects/{project_key}/dependencies")
@@ -364,3 +452,32 @@ def post_batch_abandon(batch_id: int) -> dict[str, Any]:
 def post_pull_request(batch_id: int) -> dict[str, Any]:
     """Push the batch branch and open a Bitbucket pull request (human-triggered)."""
     return _guard(batch.create_pull_request, batch_id)
+
+
+# --- bundled frontend (Docker / single-process deployments) -------------------
+# Registered last so every API route above wins. Skipped in dev, where the Vite
+# server serves the frontend and `frontend/dist` does not exist.
+
+# Windows reads MIME types from the registry, where .js is often "text/plain" -
+# browsers refuse to run module scripts served that way and the page stays blank.
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("text/javascript", ".mjs")
+mimetypes.add_type("text/css", ".css")
+
+_FRONTEND_DIST = RESOURCE_ROOT / "frontend" / "dist"
+
+
+class _SpaFiles(StaticFiles):
+    """Static files that fall back to index.html so client-side routes survive a refresh."""
+
+    async def get_response(self, path: str, scope: Any) -> Response:
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code == 404:
+                return await super().get_response("index.html", scope)
+            raise
+
+
+if (_FRONTEND_DIST / "index.html").is_file():
+    app.mount("/", _SpaFiles(directory=_FRONTEND_DIST, html=True), name="frontend")

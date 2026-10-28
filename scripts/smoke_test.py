@@ -135,6 +135,17 @@ def main() -> int:
     store.init_db()
     store.upsert_projects([{"key": PROJECT_KEY, "name": "Smoke Project"}])
     service.set_repo_path(PROJECT_KEY, str(REPO))
+    graph.sonar.get_issue = lambda _key: {
+        "key": ISSUE_ID,
+        "project": PROJECT_KEY,
+        "rule": "java:S1698",
+        "severity": "MAJOR",
+        "type": "BUG",
+        "status": "OPEN",
+        "message": "Strings should be compared with equals()",
+        "component": f"{PROJECT_KEY}:{FILE_PATH}",
+        "line": 5,
+    }
     store.replace_issues(
         PROJECT_KEY,
         [
@@ -173,9 +184,15 @@ def main() -> int:
     resumed = service.workflow_state(ISSUE_ID)
     check("state survives a fresh read (checkpointed)", resumed["awaiting_approval"])
 
-    result = service.decide(ISSUE_ID, approved=True, feedback="Keep the diff minimal.")
+    parked = service.decide(ISSUE_ID, approved=True, feedback="Keep the diff minimal.")
+    check("fix parks awaiting a human build", parked["status"] == "fix_generated", str(parked.get("error")))
+    graph.build.verify = lambda *_a, **_k: {
+        "status": "passed", "success": True, "output": "stub build", "test_status": None,
+        "test_output": None, "artifacts": None,
+    }
+    result = service.request_build(ISSUE_ID)
     check("fix applied", result["status"] == "applied", str(result.get("error")))
-    check("branch created", str(result.get("branch", "")).startswith("sonarfix/"))
+    check("branch created", f"-fix-{ISSUE_ID[:8]}" in str(result.get("branch", "")))
     check("diff captured", ".equals(name)" in (result.get("diff") or ""))
     check("commit made", bool(result.get("commit_sha")))
     check("commit message generated", bool((result.get("pr") or {}).get("commit_message")))
@@ -187,7 +204,7 @@ def main() -> int:
 
     check("working tree is clean after commit", not git("status", "--porcelain").strip())
     check("fix is on disk", '"world".equals(name)' in (REPO / FILE_PATH).read_text())
-    check("branch is checked out", "sonarfix/" in git("rev-parse", "--abbrev-ref", "HEAD"))
+    check("branch is checked out", f"-fix-{ISSUE_ID[:8]}" in git("rev-parse", "--abbrev-ref", "HEAD"))
 
     # Rejection path, on a clean run.
     service.analyze_issue(ISSUE_ID)

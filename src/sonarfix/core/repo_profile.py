@@ -15,6 +15,8 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
+from .config import PROJECT_ROOT
+
 _DISCOVERY = "01-RepoDiscoveryAgent.json"
 _GRAPH = "03-DependencyGraphAgent.json"
 _WIDE_USE = 20  # consumers above this: treat public surface as frozen
@@ -24,7 +26,7 @@ def _runs_dir() -> Path:
     override = os.environ.get("SONARFIX_RUNS_DIR")
     if override:
         return Path(override)
-    return Path(__file__).resolve().parents[3] / ".sonarfix" / "runs"
+    return PROJECT_ROOT / ".sonarfix" / "runs"
 
 
 def _latest_run() -> Path | None:

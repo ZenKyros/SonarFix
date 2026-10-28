@@ -1,0 +1,18 @@
+services:
+  sonarfix:
+    build: .
+    image: sonarfix:latest
+    env_file: .env
+    environment:
+      # Only reachable from this machine. Change to "8000:8000" to share on the LAN.
+      SONARFIX_DB: /app/data/sonarfix.db
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - sonarfix-data:/app/data
+      # Your local clones. In the UI, use paths like /repos/<project>.
+      - ${REPOS_DIR:-./repos}:/repos
+    restart: unless-stopped
+
+volumes:
+  sonarfix-data:

@@ -87,7 +87,14 @@ async def run(
     _check_provider()
     settings = get_settings()
 
+    from . import setup
+
+    # Auth is the user's own Claude login (SSO). A blank ANTHROPIC_API_KEY would
+    # otherwise push the CLI into API-key mode.
+    env = {} if settings.anthropic_api_key else {"ANTHROPIC_API_KEY": ""}
     options = sdk.ClaudeAgentOptions(
+        cli_path=setup.find_claude(),
+        env=env,
         model=settings.model,
         cwd=str(repo_path),
         system_prompt=system_prompt,
@@ -129,3 +136,27 @@ async def run(
 def describe() -> str:
     settings = get_settings()
     return f"claude-code / {settings.model} ({settings.claude_code_permission_mode})"
+
+
+async def ping() -> str:
+    """One tiny session through the same path real runs use, to prove sign-in works."""
+    sdk = _require_sdk()
+    from . import setup
+
+    settings = get_settings()
+    env = {} if settings.anthropic_api_key else {"ANTHROPIC_API_KEY": ""}
+    options = sdk.ClaudeAgentOptions(
+        cli_path=setup.find_claude(),
+        env=env,
+        model=settings.model,
+        setting_sources=[],
+        allowed_tools=[],
+        max_turns=1,
+    )
+    final: Any = None
+    async for message in sdk.query(prompt="Reply with the single word OK.", options=options):
+        if isinstance(message, sdk.ResultMessage):
+            final = message
+    if final is None or getattr(final, "is_error", False):
+        raise RuntimeError(getattr(final, "result", "") or "No response from Claude Code.")
+    return (getattr(final, "result", "") or "").strip()[:80]

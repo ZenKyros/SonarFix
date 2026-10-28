@@ -130,6 +130,19 @@ CREATE TABLE IF NOT EXISTS dependencies (
 );
 
 CREATE INDEX IF NOT EXISTS idx_deps_project ON dependencies(project_key);
+
+-- Upgrade analyses outlive rescans (a rescan replaces `dependencies` rows), so
+-- they are keyed by what was analysed, not by a dependency row id.
+CREATE TABLE IF NOT EXISTS dependency_analyses (
+    project_key     TEXT NOT NULL,
+    ecosystem       TEXT NOT NULL,
+    package         TEXT NOT NULL,
+    manifest_path   TEXT NOT NULL,
+    current_version TEXT NOT NULL,
+    result          TEXT,
+    analyzed_at     TEXT,
+    PRIMARY KEY (project_key, ecosystem, package, manifest_path, current_version)
+);
 """
 
 # Severity order used for sorting in the UI (worst first).
@@ -150,6 +163,7 @@ DEP_SEVERITY_RANK = {
     "moderate": 2,
     "low": 3,
     "unknown": 4,
+    "none": 5,  # not vulnerable, just behind the latest release
 }
 
 
@@ -193,6 +207,7 @@ _BATCHES_MIGRATIONS = (
 _DEPENDENCIES_MIGRATIONS = (
     "ALTER TABLE dependencies ADD COLUMN summary TEXT",
     "ALTER TABLE dependencies ADD COLUMN reason TEXT",
+    "ALTER TABLE dependencies ADD COLUMN latest_version TEXT",
 )
 
 
@@ -731,6 +746,7 @@ def replace_dependencies(project_key: str, findings: list[dict[str, Any]]) -> in
             "recommendation": f.get("recommendation"),
             "summary": f.get("summary"),
             "reason": f.get("reason"),
+            "latest_version": f.get("latest_version"),
             "scanned_at": stamp,
         }
         for f in findings
@@ -742,11 +758,11 @@ def replace_dependencies(project_key: str, findings: list[dict[str, Any]]) -> in
                 "INSERT INTO dependencies "
                 "(project_key, ecosystem, package, current_version, fixed_version, "
                 " severity, advisory_id, manifest_path, is_direct, bump_kind, "
-                " recommendation, summary, reason, scanned_at) "
+                " recommendation, summary, reason, latest_version, scanned_at) "
                 "VALUES "
                 "(:project_key, :ecosystem, :package, :current_version, :fixed_version, "
                 " :severity, :advisory_id, :manifest_path, :is_direct, :bump_kind, "
-                " :recommendation, :summary, :reason, :scanned_at)",
+                " :recommendation, :summary, :reason, :latest_version, :scanned_at)",
                 rows,
             )
     return len(rows)
@@ -759,10 +775,51 @@ def list_dependencies(project_key: str) -> list[dict[str, Any]]:
                 "SELECT * FROM dependencies WHERE project_key = ? ORDER BY id", (project_key,)
             )
         )
+        analyses = {
+            (a["ecosystem"], a["package"], a["manifest_path"], a["current_version"]): a
+            for a in _rows(
+                conn.execute(
+                    "SELECT * FROM dependency_analyses WHERE project_key = ?", (project_key,)
+                )
+            )
+        }
     for row in rows:
         row["direct"] = bool(row.pop("is_direct"))
+        found = analyses.get(
+            (row["ecosystem"], row["package"], row["manifest_path"], row["current_version"])
+        )
+        row["analysis"] = None
+        if found and found.get("result"):
+            try:
+                row["analysis"] = json.loads(found["result"])
+                row["analysis"]["analyzed_at"] = found["analyzed_at"]
+            except ValueError:
+                pass
     rows.sort(key=lambda d: DEP_SEVERITY_RANK.get(d["severity"], 9))
     return rows
+
+
+def get_dependency(dep_id: int) -> dict[str, Any] | None:
+    with connect() as conn:
+        row = conn.execute("SELECT * FROM dependencies WHERE id = ?", (dep_id,)).fetchone()
+    if not row:
+        return None
+    found = dict(row)
+    found["direct"] = bool(found.pop("is_direct"))
+    return found
+
+
+def save_dependency_analysis(project_key: str, dep: dict[str, Any], result: dict[str, Any]) -> None:
+    with connect() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO dependency_analyses "
+            "(project_key, ecosystem, package, manifest_path, current_version, result, analyzed_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                project_key, dep["ecosystem"], dep["package"], dep["manifest_path"],
+                dep["current_version"], json.dumps(result), now(),
+            ),
+        )
 
 
 def dependencies_scanned_at(project_key: str) -> str | None:

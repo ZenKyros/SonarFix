@@ -16,7 +16,11 @@ from typing import Any, Callable
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from sonarfix.core import claude_code, mcp, providers  # noqa: E402
+from sonarfix.core import config as _config  # noqa: E402
 from sonarfix.core.config import ConfigError, get_settings  # noqa: E402
+
+# A model picked in the UI persists to data/model_override.txt; ignore it here.
+_config._MODEL_OVERRIDE_FILE = Path(os.devnull + ".none")
 
 # Settings the tool reads; cleared between cases so each one starts clean.
 MANAGED = [
@@ -68,7 +72,7 @@ def main() -> int:
     configure(**BASE, ANTHROPIC_API_KEY="sk-test")
     settings = get_settings()
     check("default provider is anthropic", settings.provider == "anthropic")
-    check("default model is claude-opus-5", settings.model == "claude-opus-5")
+    check("default model is claude-sonnet-5-5", settings.model == "claude-sonnet-5-5")
     check("anthropic config validates", raises_config_error(settings.require_llm) is None)
     check("anthropic is not flagged local", not settings.uses_local_llm)
 

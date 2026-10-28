@@ -57,6 +57,7 @@ export default function Layout({ children }) {
         <nav className="topbar-nav">
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/">Projects</Link>
+          <Link to="/settings">Settings</Link>
         </nav>
         {modelInfo?.choices?.length > 0 && (
           <select
