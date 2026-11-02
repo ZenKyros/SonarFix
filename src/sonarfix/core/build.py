@@ -141,16 +141,69 @@ class _Commands:
 _MSBUILD_ARGS = ["/nologo", "/v:minimal", "/p:RunPostBuildEvent=Never", "/p:PostBuildEvent="]
 
 
-def _dotnet_commands(csproj: Path) -> _Commands:
+_HINT_PATH_RE = re.compile(r"<HintPath>\s*([^<]+?)\s*</HintPath>", re.I)
+_CONFIG_DIR_RE = re.compile(r"[\\/]bin[\\/]([^\\/]+)[\\/]", re.I)
+
+
+def _prerequisite_builds(csproj: Path, repo_root: Path) -> list[list[str]]:
+    """Builds for sibling projects whose compiled DLL this project references.
+
+    Monorepos often reference a neighbour's compiled DLL through a HintPath
+    (.../Lib/bin/Release/Lib.dll) instead of a ProjectReference. On a fresh clone that DLL was never built, so
+    compiling this one project fails with CS0246 - not a problem with the fix.
+    Build the owning project first (in the configuration the path names).
+    """
+    msbuild = _find_msbuild()
+    if not msbuild:
+        return []
+    try:
+        text = csproj.read_text(encoding="utf-8-sig", errors="replace")
+    except OSError:
+        return []
+
+    steps: list[list[str]] = []
+    seen: set[Path] = set()
+    for hint in _HINT_PATH_RE.findall(text):
+        if "$(" in hint:
+            continue
+        dll = (csproj.parent / hint.replace("\\", "/")).resolve()
+        config = _CONFIG_DIR_RE.search(str(dll))
+        if dll.exists() or not config or not dll.is_relative_to(repo_root.resolve()):
+            continue
+        owner = dll.parent
+        while owner.name.lower() != "bin" and owner != owner.parent:
+            owner = owner.parent
+        project_dir = owner.parent
+        candidates = sorted(
+            p for pattern in _DOTNET_GLOBS for p in project_dir.glob(pattern)
+        )
+        if not candidates or candidates[0] in seen or candidates[0] == csproj:
+            continue
+        seen.add(candidates[0])
+        steps.append([
+            msbuild, str(candidates[0]), "/restore", "/p:RestorePackagesConfig=true",
+            # packages.config projects restore into $(SolutionDir)packages; with no
+            # .sln in play, point it at the project's own folder.
+            f"/p:SolutionDir={project_dir}{os.sep}",
+            f"/p:Configuration={config.group(1)}",
+            *_MSBUILD_ARGS,
+        ])
+    return steps
+
+
+def _dotnet_commands(csproj: Path, repo_root: Path) -> _Commands:
     dotnet = shutil.which("dotnet")
     msbuild = _find_msbuild()
+    prerequisites = _prerequisite_builds(csproj, repo_root)
     if _is_sdk_style(csproj) and dotnet:
         return _Commands(
-            build=[[dotnet, "build", str(csproj), "--nologo", "-v", "minimal"]],
+            build=[*prerequisites, [dotnet, "build", str(csproj), "--nologo", "-v", "minimal"]],
             test=[[dotnet, "test", str(csproj), "--nologo", "-v", "minimal"]],
         )
     if msbuild:
-        return _Commands(build=[[msbuild, str(csproj), *_MSBUILD_ARGS]], test=None)
+        return _Commands(
+            build=[*prerequisites, [msbuild, str(csproj), *_MSBUILD_ARGS]], test=None
+        )
     if dotnet:
         return _Commands(
             build=[[dotnet, "build", str(csproj), "--nologo", "-v", "minimal"]],
@@ -267,7 +320,7 @@ def _commands_for(
     if kind == "npm":
         return _npm_commands(marker, changed or [], repo_root)
     if kind == "dotnet":
-        return _dotnet_commands(marker)
+        return _dotnet_commands(marker, repo_root)
     if kind == "cpp-vs":
         return _cpp_vs_commands(marker)
     if kind == "cmake":
