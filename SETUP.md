@@ -41,6 +41,9 @@ Edit `.env` and fill in:
   branches and open pull requests
 - **`BITBUCKET_USERNAME`** — only needed if your token requires basic auth
   (Bitbucket Cloud app passwords)
+- **`AZURE_DEVOPS_TOKEN`** — a personal access token (Code: Read & write), used
+  when the repo's `origin` is Azure DevOps (dev.azure.com, `*.visualstudio.com`,
+  Azure DevOps Server). Works for clone, push and pull requests
 
 Every other field in `.env.example` has sensible defaults and is documented
 inline — read the comments before changing them.

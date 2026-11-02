@@ -577,7 +577,7 @@ def _require_build_passed(run: dict[str, Any]) -> None:
 
 
 def create_pull_request(issue_id: str) -> dict[str, Any]:
-    """Push the committed fix branch for one issue and open a Bitbucket PR.
+    """Push the committed fix branch for one issue and open a pull request.
 
     Only reachable once the fix has been committed (`run.status == "applied"`)
     AND the build (and any tests) passed - a failed, skipped, or unverified
@@ -630,7 +630,7 @@ def clone_repo(
 
     `dest_path` lets the caller pick exactly where it lands; without it, the
     clone goes under data/repos/<project>. `url` may be a clone URL or a
-    browser page copied from Bitbucket - either normalizes the same way.
+    browser page copied from Bitbucket or Azure DevOps - either normalizes the same way.
     """
     from . import scm
     from .repo import slugify
@@ -643,7 +643,7 @@ def clone_repo(
         if dest_path
         else get_settings().db_path.parent / "repos" / slugify(project_key, limit=80)
     )
-    if get_settings().bitbucket_token:
+    if scm.has_token_for(url):
         scm.clone(url, dest, branch)
     else:
         _git("clone", "--single-branch", *(["--branch", branch] if branch else []), url, str(dest))

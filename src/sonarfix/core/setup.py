@@ -25,6 +25,7 @@ FIELDS = {
     "sonar_org": "SONAR_ORG",
     "bitbucket_username": "BITBUCKET_USERNAME",
     "bitbucket_token": "BITBUCKET_TOKEN",
+    "azure_devops_token": "AZURE_DEVOPS_TOKEN",
 }
 
 _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -71,6 +72,7 @@ def credentials_status() -> dict[str, Any]:
         "sonar_token_set": bool(s.sonar_token),
         "bitbucket_username": s.bitbucket_username,
         "bitbucket_token_set": bool(s.bitbucket_token),
+        "azure_devops_token_set": bool(s.azure_devops_token),
     }
 
 

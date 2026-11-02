@@ -275,7 +275,7 @@ export default function IssueDetailPage() {
             run("abandonBuild", "Stopping retries…", () => api.abandonBuild(issueId))
           }
           onCreatePr={() =>
-            run("createPr", "Pushing the branch and opening the Bitbucket pull request…", () =>
+            run("createPr", "Pushing the branch and opening the pull request…", () =>
               api.createIssuePullRequest(issueId)
             )
           }

@@ -177,11 +177,11 @@ export default function ProjectsPage() {
                   </div>
                   {!selected.repo_path && (
                     <>
-                      <p className="caption or">or clone it (uses BITBUCKET_TOKEN when set)</p>
+                      <p className="caption or">or clone it (uses the Bitbucket / Azure DevOps token when set)</p>
                       <div className="input-row">
                         <input
                           className="text-input"
-                          placeholder="https://bitbucket.example.com/scm/PROJ/repo.git"
+                          placeholder="https://bitbucket.example.com/scm/PROJ/repo.git or https://dev.azure.com/org/project/_git/repo"
                           value={cloneUrl}
                           onChange={(e) => setCloneUrl(e.target.value)}
                         />

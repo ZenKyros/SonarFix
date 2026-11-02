@@ -8,6 +8,7 @@ const EMPTY = {
   sonar_org: "",
   bitbucket_username: "",
   bitbucket_token: "",
+  azure_devops_token: "",
 };
 
 function Step({ n, title, done, children }) {
@@ -77,7 +78,7 @@ export default function SettingsPage() {
       "save",
       async () => {
         await api.saveCredentials(form);
-        setForm((f) => ({ ...f, sonar_token: "", bitbucket_token: "" }));
+        setForm((f) => ({ ...f, sonar_token: "", bitbucket_token: "", azure_devops_token: "" }));
       },
       "Saved."
     );
@@ -198,6 +199,23 @@ export default function SettingsPage() {
           placeholder={credentials.bitbucket_token_set ? "••••••••" : "Repository or project access token"}
           value={form.bitbucket_token}
           onChange={set("bitbucket_token")}
+        />
+      </Step>
+
+      <Step n={4} title="Azure DevOps (for pull requests)" done={credentials.azure_devops_token_set}>
+        <p className="caption">
+          Used when the project's repo lives in Azure DevOps Repos. Skip it if you only use Bitbucket.
+        </p>
+        <label className="field-label">
+          Personal access token {credentials.azure_devops_token_set && "(saved - paste a new one to update)"}
+        </label>
+        <input
+          className="text-input"
+          type="password"
+          autoComplete="off"
+          placeholder={credentials.azure_devops_token_set ? "••••••••" : "PAT with Code (Read & write) scope"}
+          value={form.azure_devops_token}
+          onChange={set("azure_devops_token")}
         />
       </Step>
 

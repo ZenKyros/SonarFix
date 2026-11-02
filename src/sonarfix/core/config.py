@@ -115,6 +115,8 @@ class Settings:
     bitbucket_token: str = ""
     bitbucket_username: str = ""
     bitbucket_url: str = ""
+    # Azure DevOps Repos (push + pull requests): a personal access token.
+    azure_devops_token: str = ""
     # Upper bound on occurrences sent to one AI session, to cap token spend.
     max_ai_occurrences: int = 20
     # Build verification: does the fix compile before it is offered as a PR.
@@ -270,6 +272,7 @@ def get_settings() -> Settings:
         bitbucket_token=os.environ.get("BITBUCKET_TOKEN", "").strip(),
         bitbucket_username=os.environ.get("BITBUCKET_USERNAME", "").strip(),
         bitbucket_url=os.environ.get("BITBUCKET_URL", "").strip().rstrip("/"),
+        azure_devops_token=os.environ.get("AZURE_DEVOPS_TOKEN", "").strip(),
         max_ai_occurrences=_int_env("SONARFIX_MAX_AI_OCCURRENCES", 20),
         build_enabled=_bool_env("SONARFIX_BUILD_ENABLED", True),
         build_timeout=_int_env("SONARFIX_BUILD_TIMEOUT", 300),

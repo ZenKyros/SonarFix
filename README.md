@@ -103,6 +103,9 @@ SONARFIX_MODEL=claude-haiku-4-5-20251001    # Use Haiku for cost efficiency
 BITBUCKET_TOKEN=BBDC-xxxxx
 BITBUCKET_USERNAME=your-username
 
+# Azure DevOps Repos (alternative to Bitbucket; chosen by the clone's origin)
+AZURE_DEVOPS_TOKEN=your-pat
+
 # Local paths
 SONARFIX_DB=data/sonarfix.db
 SONARFIX_API_URL=http://127.0.0.1:8000

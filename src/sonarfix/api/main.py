@@ -151,6 +151,7 @@ class CredentialsBody(BaseModel):
     sonar_org: str | None = None
     bitbucket_username: str | None = None
     bitbucket_token: str | None = None
+    azure_devops_token: str | None = None
 
 
 @app.get("/setup/status")
