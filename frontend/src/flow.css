@@ -546,3 +546,6 @@
 .dep-analysis pre { margin: 0; padding: 8px 10px; background: var(--bg); border-radius: 8px; font-size: 0.76rem; overflow-x: auto; max-height: 220px; }
 .dep-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
 .dep-actions .text-input { width: 140px; }
+
+.occ-change { flex: 1 1 100%; margin-top: 6px; }
+.occ-change summary { cursor: pointer; font-size: 0.8rem; color: var(--text-muted); }

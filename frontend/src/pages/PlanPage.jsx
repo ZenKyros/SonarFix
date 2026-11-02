@@ -276,15 +276,13 @@ function GroupCard({ group, selectable, checked, onToggle, expanded, onExpand })
               </p>
               <BeforeAfter before={group.recipe.before} after={group.recipe.after} />
               <p className="caption">
-                Preview on your code — {group.example.file}:{group.example.line}
+                Preview on your code — every file below, expand a row to see its change
               </p>
-              <DiffBlock diff={group.example.diff} compact />
             </>
           )}
           {group.bucket === "ai" && (
             <>
               <p className="why">{group.message}</p>
-              {group.example.snippet && <pre className="code-block compact">{group.example.snippet}</pre>}
             </>
           )}
           {group.bucket === "skip" && <p className="why">{group.skip_reason}</p>}
@@ -298,6 +296,16 @@ function GroupCard({ group, selectable, checked, onToggle, expanded, onExpand })
                 </Link>
                 {o.duplicate_of && <span className="chip chip-dup">duplicate</span>}
                 {o.note && <span className="occ-note">{o.note}</span>}
+                {(o.diff || o.snippet) && (
+                  <details className="occ-change" open={group.occurrences.length <= 10}>
+                    <summary>{o.diff ? "Before / after" : "Flagged code"}</summary>
+                    {o.diff ? (
+                      <DiffBlock diff={o.diff} compact />
+                    ) : (
+                      <pre className="code-block compact">{o.snippet}</pre>
+                    )}
+                  </details>
+                )}
               </li>
             ))}
           </ul>
