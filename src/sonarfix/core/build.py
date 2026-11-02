@@ -133,6 +133,14 @@ class _Commands:
         self.skip = skip
 
 
+# Verification only proves the code compiles. Legacy projects often end with a
+# post-build `copy "$(TargetPath)" "$(SolutionDir)..\deploymentin"` step, which
+# fails when a single project is built without its .sln ($(SolutionDir) is
+# undefined) and otherwise drops binaries into the clone, dirtying the working
+# tree for the next run. Neither belongs in a verification build.
+_MSBUILD_ARGS = ["/nologo", "/v:minimal", "/p:RunPostBuildEvent=Never", "/p:PostBuildEvent="]
+
+
 def _dotnet_commands(csproj: Path) -> _Commands:
     dotnet = shutil.which("dotnet")
     msbuild = _find_msbuild()
@@ -142,7 +150,7 @@ def _dotnet_commands(csproj: Path) -> _Commands:
             test=[[dotnet, "test", str(csproj), "--nologo", "-v", "minimal"]],
         )
     if msbuild:
-        return _Commands(build=[[msbuild, str(csproj), "/nologo", "/v:minimal"]], test=None)
+        return _Commands(build=[[msbuild, str(csproj), *_MSBUILD_ARGS]], test=None)
     if dotnet:
         return _Commands(
             build=[[dotnet, "build", str(csproj), "--nologo", "-v", "minimal"]],
@@ -156,7 +164,7 @@ def _cpp_vs_commands(vcxproj: Path) -> _Commands:
     if not msbuild:
         return _Commands(build=None, test=None, note="MSBuild.exe is not on PATH.")
     # No standard test runner for a bare .vcxproj - CMake+ctest covers testing.
-    return _Commands(build=[[msbuild, str(vcxproj), "/nologo", "/v:minimal"]], test=None)
+    return _Commands(build=[[msbuild, str(vcxproj), *_MSBUILD_ARGS]], test=None)
 
 
 def _cmake_commands(cmakelists: Path) -> _Commands:
