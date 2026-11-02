@@ -102,7 +102,13 @@ def _client() -> httpx.Client:
 
 
 def _get(client: httpx.Client, path: str, **params: Any) -> dict[str, Any]:
-    response = client.get(path, params={k: v for k, v in params.items() if v})
+    try:
+        response = client.get(path, params={k: v for k, v in params.items() if v})
+    except httpx.HTTPError as exc:
+        raise SonarError(
+            f"Could not reach SonarQube for GET {path}: {type(exc).__name__}: {exc}. "
+            "Check the SonarQube URL and that you are on the corporate network/VPN."
+        ) from exc
     if response.status_code >= 400:
         raise SonarError(
             f"GET {path} returned {response.status_code}: {response.text[:300]}"
