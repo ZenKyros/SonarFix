@@ -68,6 +68,11 @@ export const api = {
   setRepoPath: (key, repoPath) =>
     request("PUT", `/projects/${key}/repo`, { json: { repo_path: repoPath } }),
   autoClone: (key) => request("POST", `/projects/${key}/auto-clone`),
+  markFalsePositive: (id, reason) =>
+    request("POST", `/issues/${encodeURIComponent(id)}/false-positive`, { json: { reason } }),
+  unmarkFalsePositive: (id) => request("DELETE", `/issues/${encodeURIComponent(id)}/false-positive`),
+  sonarBranches: (key) => request("GET", `/projects/${key}/sonar-branches`),
+  setSonarBranch: (key, branch) => request("PUT", `/projects/${key}/sonar-branch`, { json: { branch } }),
   syncIssues: (key) => request("POST", `/projects/${key}/sync-issues`),
   reportUrl: (key) => `${API_URL}/projects/${key}/report`,
 
@@ -95,6 +100,9 @@ export const api = {
   buildBatch: (id) => request("POST", `/batches/${id}/build`),
   retryBatch: (id, feedback) =>
     request("POST", `/batches/${id}/retry`, { json: { feedback: feedback || null } }),
+  batchLocal: (id) => request("GET", `/batches/${id}/local`),
+  batchCheckout: (id) => request("POST", `/batches/${id}/local/checkout`),
+  batchReturn: (id) => request("POST", `/batches/${id}/local/return`),
   abandonBatch: (id) => request("POST", `/batches/${id}/abandon`),
   createPullRequest: (id) => request("POST", `/batches/${id}/pull-request`),
 

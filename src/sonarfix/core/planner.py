@@ -225,7 +225,15 @@ def classify(project_key: str) -> tuple[list[Occurrence], RepoWorkspace]:
                 files[file_path] = None
         return files[file_path]
 
-    for issue in store.list_issues(project_key, include_raw=True):
+    all_issues = store.list_issues(project_key, include_raw=True)
+    # Issues a human marked as false positives are set aside - never planned or fixed.
+    set_aside = {
+        issue_id for issue_id, fp in store.false_positives_for(i["id"] for i in all_issues).items()
+        if fp["status"] == "marked"
+    }
+    for issue in all_issues:
+        if issue["id"] in set_aside:
+            continue
         raw = json.loads(issue.get("raw_json") or "{}")
         file_path = workspace.locate(issue.get("file_path") or "")
         issue["file_path"] = file_path

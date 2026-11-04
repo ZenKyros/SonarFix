@@ -8,6 +8,7 @@ import BuildStatusBadge from "../components/BuildStatusBadge";
 import TerminalLog from "../components/TerminalLog";
 import BuildFailureSummary from "../components/BuildFailureSummary";
 import ActivityLog from "../components/ActivityLog";
+import LocalReview from "../components/LocalReview";
 import { useStatus } from "../status";
 
 const ACTIVE = new Set(["queued", "running"]);
@@ -313,6 +314,10 @@ export default function BatchPage() {
             </>
           )}
         </section>
+      )}
+
+      {batch.branch && !ACTIVE.has(batch.status) && batch.status !== "no_changes" && (
+        <LocalReview batchId={batchId} />
       )}
 
       <ActivityLog batchId={batchId} live={ACTIVE.has(batch.status)} />

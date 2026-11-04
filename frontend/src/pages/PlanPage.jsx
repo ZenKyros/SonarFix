@@ -9,6 +9,7 @@ import Stepper from "../components/Stepper";
 import BuildStatusBadge from "../components/BuildStatusBadge";
 import TerminalLog from "../components/TerminalLog";
 import BuildFailureSummary from "../components/BuildFailureSummary";
+import BranchPicker from "../components/BranchPicker";
 
 const SECTIONS = [
   {
@@ -102,6 +103,19 @@ export default function PlanPage() {
     }
   };
 
+  // A different SonarQube branch means different issues: re-sync, then re-plan.
+  const onBranchChanged = async () => {
+    setError(null);
+    try {
+      await api.syncIssues(projectKey);
+      const data = await api.plan(projectKey);
+      setPlan(data);
+      setSelected(new Set(data.groups.filter((g) => g.bucket === "ai").map((g) => g.id)));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : String(err));
+    }
+  };
+
   if (!plan) {
     return (
       <div className="page">
@@ -125,6 +139,8 @@ export default function PlanPage() {
         </div>
         <Stepper current={0} />
       </div>
+
+      <BranchPicker projectKey={projectKey} onChanged={onBranchChanged} onError={setError} />
 
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 

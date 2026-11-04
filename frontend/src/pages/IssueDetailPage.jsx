@@ -8,6 +8,7 @@ import DiffBlock from "../components/DiffBlock";
 import BuildStatusBadge from "../components/BuildStatusBadge";
 import TerminalLog from "../components/TerminalLog";
 import { useStatus } from "../status";
+import FalsePositiveBox from "../components/FalsePositiveBox";
 
 export default function IssueDetailPage() {
   const { issueId } = useParams();
@@ -152,6 +153,13 @@ export default function IssueDetailPage() {
           </>
         )}
       </section>
+
+      <FalsePositiveBox
+        issueId={issueId}
+        fp={detail.false_positive}
+        onChanged={loadAll}
+        onError={setError}
+      />
 
       <div className="button-row">
         <button

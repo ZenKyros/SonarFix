@@ -66,6 +66,14 @@ def _guard(fn, *args: Any, **kwargs: Any) -> Any:
 # --- request bodies ----------------------------------------------------------
 
 
+class FalsePositiveBody(BaseModel):
+    reason: str | None = Field(default=None, description="Why this is a false positive.")
+
+
+class SonarBranchBody(BaseModel):
+    branch: str | None = Field(default=None, description="SonarQube branch name; empty for the main branch.")
+
+
 class RepoPathBody(BaseModel):
     repo_path: str = Field(description="Absolute path to a local git clone.")
 
@@ -241,6 +249,18 @@ def put_repo_path(project_key: str, body: RepoPathBody) -> dict[str, Any]:
     return _guard(service.set_repo_path, project_key, body.repo_path)
 
 
+@app.get("/projects/{project_key}/sonar-branches")
+def get_sonar_branches(project_key: str) -> dict[str, Any]:
+    """Branches SonarQube has analysed for this project, and the selected one."""
+    return _guard(service.sonar_branches, project_key)
+
+
+@app.put("/projects/{project_key}/sonar-branch")
+def put_sonar_branch(project_key: str, body: SonarBranchBody) -> dict[str, Any]:
+    """Choose which SonarQube branch's issues to fetch."""
+    return _guard(service.set_sonar_branch, project_key, body.branch)
+
+
 @app.post("/projects/{project_key}/auto-clone")
 def post_auto_clone(project_key: str) -> dict[str, Any]:
     """Discover the repo SonarQube has bound to this project and clone it."""
@@ -314,6 +334,18 @@ def get_issue(issue_id: str) -> dict[str, Any]:
 def post_analyze(issue_id: str) -> dict[str, Any]:
     """Steps 4-6: the analysis agent explores the repo and plans the fix."""
     return _guard(service.analyze_issue, issue_id)
+
+
+@app.post("/issues/{issue_id}/false-positive")
+def post_false_positive(issue_id: str, body: FalsePositiveBody | None = None) -> dict[str, Any]:
+    """Set the issue aside as a false positive. Local only - SonarQube is not changed."""
+    return _guard(service.mark_false_positive, issue_id, (body.reason if body else "") or "")
+
+
+@app.delete("/issues/{issue_id}/false-positive")
+def delete_false_positive(issue_id: str) -> dict[str, Any]:
+    """Move the issue back to the open list."""
+    return _guard(service.unmark_false_positive, issue_id)
 
 
 @app.get("/issues/{issue_id}/state")
@@ -452,6 +484,24 @@ def post_batch_retry(
     new_id = _guard(batch.retry_with_feedback, batch_id, feedback or "")
     background.add_task(batch.run, new_id)
     return store.get_batch(new_id) or {"id": new_id}
+
+
+@app.get("/batches/{batch_id}/local")
+def get_batch_local(batch_id: int) -> dict[str, Any]:
+    """Where this batch's fix lives in the user's local repo."""
+    return _guard(batch.local_review, batch_id)
+
+
+@app.post("/batches/{batch_id}/local/checkout")
+def post_batch_local_checkout(batch_id: int) -> dict[str, Any]:
+    """Switch the local repo onto the batch branch (to open/build it in Visual Studio)."""
+    return _guard(batch.checkout_locally, batch_id)
+
+
+@app.post("/batches/{batch_id}/local/return")
+def post_batch_local_return(batch_id: int) -> dict[str, Any]:
+    """Switch the local repo back to the branch the batch started from."""
+    return _guard(batch.return_to_base, batch_id)
 
 
 @app.post("/batches/{batch_id}/abandon")

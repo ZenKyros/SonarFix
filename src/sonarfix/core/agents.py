@@ -68,6 +68,15 @@ class IssueAnalysis(BaseModel):
     confidence: float = Field(
         ge=0.0, le=1.0, description="Confidence in this analysis and plan, 0 to 1."
     )
+    false_positive: bool = Field(
+        default=False,
+        description="True only if, after reading the code, the flagged code is NOT actually a "
+        "problem (a false positive). When true, remediation_plan should be empty.",
+    )
+    false_positive_reason: str = Field(
+        default="",
+        description="If false_positive is true: why, citing the code that proves it. Otherwise empty.",
+    )
 
 
 class FixOutcome(BaseModel):

@@ -182,6 +182,7 @@ def connect() -> sqlite3.Connection:
 
 _PROJECTS_MIGRATIONS = (
     "ALTER TABLE projects ADD COLUMN default_branch TEXT",
+    "ALTER TABLE projects ADD COLUMN sonar_branch TEXT",
 )
 
 _FIX_RUNS_MIGRATIONS = (
@@ -269,9 +270,27 @@ def _migrate_fix_plans(conn: sqlite3.Connection) -> None:
     conn.execute("ALTER TABLE fix_plans_new RENAME TO fix_plans")
 
 
+# Local-only record of issues judged to be false positives. SonarQube is never
+# told: this exists purely so SonarFix can set them aside. status 'suggested' is
+# the AI's opinion (nothing moves until a human confirms); 'marked' is a human's
+# decision and removes the issue from the open list and the fix plan.
+_FALSE_POSITIVES_SCHEMA = """
+CREATE TABLE IF NOT EXISTS false_positives (
+    issue_id     TEXT PRIMARY KEY,
+    project_key  TEXT,
+    status       TEXT NOT NULL,
+    source       TEXT NOT NULL,
+    reason       TEXT,
+    updated_at   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_false_positives_project ON false_positives(project_key);
+"""
+
+
 def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
+        conn.executescript(_FALSE_POSITIVES_SCHEMA)
         _migrate_fix_plans(conn)
         for statement in (
             *_PROJECTS_MIGRATIONS, *_FIX_RUNS_MIGRATIONS, *_BATCHES_MIGRATIONS,
@@ -376,6 +395,52 @@ def set_default_branch(key: str, branch: str) -> None:
     See `repo.safe_base_branch` for why this matters."""
     with connect() as conn:
         conn.execute("UPDATE projects SET default_branch = ? WHERE key = ?", (branch, key))
+
+
+def set_sonar_branch(key: str, branch: str | None) -> None:
+    """Which SonarQube branch's issues to fetch for this project (None = its main branch)."""
+    with connect() as conn:
+        conn.execute("UPDATE projects SET sonar_branch = ? WHERE key = ?", (branch or None, key))
+
+
+def set_false_positive(
+    issue_id: str, project_key: str | None, status: str, source: str, reason: str = ""
+) -> None:
+    """status: 'suggested' (AI) or 'marked' (a human decided)."""
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO false_positives (issue_id, project_key, status, source, reason, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(issue_id) DO UPDATE SET "
+            "project_key = excluded.project_key, status = excluded.status, "
+            "source = excluded.source, reason = excluded.reason, updated_at = excluded.updated_at",
+            (issue_id, project_key, status, source, reason or "", now()),
+        )
+
+
+def clear_false_positive(issue_id: str) -> None:
+    with connect() as conn:
+        conn.execute("DELETE FROM false_positives WHERE issue_id = ?", (issue_id,))
+
+
+def get_false_positive(issue_id: str) -> dict[str, Any] | None:
+    with connect() as conn:
+        row = conn.execute("SELECT * FROM false_positives WHERE issue_id = ?", (issue_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def false_positives_for(issue_ids: Iterable[str]) -> dict[str, dict[str, Any]]:
+    """Looked up by issue id (not project key), so composite projects line up."""
+    ids = list(issue_ids)
+    found: dict[str, dict[str, Any]] = {}
+    with connect() as conn:
+        for start in range(0, len(ids), 500):
+            chunk = ids[start:start + 500]
+            marks = ",".join("?" * len(chunk))
+            for row in conn.execute(
+                f"SELECT * FROM false_positives WHERE issue_id IN ({marks})", chunk
+            ):
+                found[row["issue_id"]] = dict(row)
+    return found
 
 
 def mark_synced(key: str) -> None:

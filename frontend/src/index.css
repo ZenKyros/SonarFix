@@ -1230,3 +1230,44 @@ a.btn { text-decoration: none; }
 .act-kind-build { background: var(--warn-soft); }
 .act-took { color: var(--text-faint); font-size: 0.75rem; }
 .act-empty { color: var(--text-muted); padding: 8px 0; }
+
+/* --- SonarQube branch picker ---------------------------------------------- */
+.bp { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 0 0 16px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius); box-shadow: var(--shadow-card); }
+.bp-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-faint); }
+.bp-wrap { position: relative; }
+.bp-button { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 6px 12px; background: var(--bg); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--text); cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s; }
+.bp-button:hover:not(:disabled), .bp-open { border-color: var(--navy-soft); }
+.bp-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bp-button:disabled { cursor: default; opacity: 0.85; }
+.bp-icon { flex: none; color: var(--navy-soft); }
+.bp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 320px; }
+.bp-caret { color: var(--text-faint); font-size: 0.75rem; }
+.bp-tag { flex: none; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; background: var(--navy); color: #fff; }
+.bp-gate { flex: none; font-size: 0.68rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; }
+.bp-ok { background: var(--accent-soft); color: #00663f; }
+.bp-fail { background: var(--danger-soft); color: var(--danger); }
+.bp-menu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 320px; max-height: 340px; overflow: auto; margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(10, 20, 20, 0.16); }
+.bp-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; background: none; border: 0; border-radius: var(--radius-sm); font: inherit; text-align: left; cursor: pointer; color: var(--text); }
+.bp-item:hover { background: var(--bg); }
+.bp-current { background: var(--accent-soft); }
+.bp-check { flex: none; width: 14px; color: var(--navy-soft); font-weight: 700; }
+.bp-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bp-item-name { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 600; overflow-wrap: anywhere; }
+.bp-item-sub { font-size: 0.74rem; color: var(--text-faint); }
+.bp-hint { font-size: 0.8rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; }
+.bp-note { flex-basis: 100%; padding: 8px 12px; background: var(--warn-soft); border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--text); }
+.bp-error .bp-hint { color: var(--danger); }
+.bp-skel { width: 180px; height: 28px; border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--border-soft), var(--bg), var(--border-soft)); background-size: 200% 100%; animation: bp-shimmer 1.2s infinite linear; }
+.bp-spin { width: 12px; height: 12px; border: 2px solid var(--border-soft); border-top-color: var(--navy-soft); border-radius: 50%; animation: bp-rot 0.7s infinite linear; }
+@keyframes bp-shimmer { to { background-position: -200% 0; } }
+@keyframes bp-rot { to { transform: rotate(360deg); } }
+@media (max-width: 560px) { .bp-menu { min-width: 0; width: calc(100vw - 48px); } }
+
+/* --- false positive box ------------------------------------------------------ */
+.fp { margin: 14px 0; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border-soft); border-left: 4px solid var(--border-soft); border-radius: var(--radius); }
+.fp-suggested { border-left-color: var(--warn); background: var(--warn-soft); }
+.fp-marked { border-left-color: var(--navy-soft); background: var(--bg); }
+.fp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.fp-scope { font-size: 0.72rem; color: var(--text-faint); }
+.fp-reason { margin: 6px 0 2px; font-size: 0.92rem; }
+.fp-sub { margin: 4px 0 8px; font-size: 0.82rem; color: var(--text-muted); }

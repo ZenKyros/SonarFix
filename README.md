@@ -1,557 +1,129 @@
+# SonarFix
 
-**Key features:**
-- 🔍 Issues clustered by pattern (one AI analysis per group, not per issue)
-- 🤖 Live AI thinking display in the UI (progressive text reveal)
-- ✅ Mechanical fixes run instantly (zero tokens)
-- 🔐 Human approval required before any code changes
-- 📊 Dependency graph for accurate blast radius estimation
-- 🚀 Built for 144+ solutions, 861+ projects, legacy MSBuild monorepos
+AI-assisted remediation of SonarQube issues. SonarFix reads a project's issues from SonarQube, groups
+them by rule, fixes what it can on a separate git branch, builds the result, and opens a pull request.
+**A human approves every AI change, and SonarFix never merges anything.**
 
----
+## How it works
 
-## Table of Contents
+1. **Sync** projects and issues from SonarQube. Pick which SonarQube branch to read when a project has several.
+2. **Plan** - issues are grouped by rule. Each group is either
+   - **mechanical**: a fixed recipe that changes the code directly and costs no tokens, or
+   - **AI**: one AI session per group (not per issue), only after you approve it.
+3. **Batch** - the approved groups run on one new branch in your local clone, one commit per group.
+   A dirty working tree is stashed first (`git stash list` to find it).
+4. **Build** - you click Build. SonarFix builds the changed projects and what depends on them
+   (C#/.NET via MSBuild or `dotnet`, C++, Maven, Gradle, npm). Test results are shown but do not block.
+5. **If the build fails** - an error list (like Visual Studio's), a verdict on whether the fix or the machine
+   caused it, why it happened, how to prevent it, and recommended actions. An action marked *AI will do this*
+   has an **Apply with AI** button and an optional box for extra instructions.
+6. **Review locally** - the fix lives on its own branch. The batch page can switch your clone onto it so you
+   can open it and build it in Visual Studio, and switch back afterwards.
+7. **Pull request** - SonarFix pushes the branch and opens a PR on Bitbucket (Cloud, Server, Data Center) or
+   Azure DevOps Repos, chosen from the clone's `origin` remote.
 
-1. [Prerequisites](#prerequisites)
-2. [Installation](#installation)
-3. [Configuration](#configuration)
-4. [Demo Setup](#demo-setup)
-5. [Running the System](#running-the-system)
-6. [Using the UI](#using-the-ui)
-7. [Architecture](#architecture)
-8. [Production Deployment](#production-deployment)
-9. [Troubleshooting](#troubleshooting)
+Also included: an **activity log** of everything the AI and SonarFix did for each batch (live while it runs),
+a **dependency scanner** with upgrade analysis (vulnerable and outdated NuGet / npm / Maven / Gradle packages,
+trial-upgraded in a scratch copy, so your tree is untouched), a dashboard, and downloadable HTML reports.
 
----
+## Requirements
 
-## Prerequisites
+- Python 3.11+ and [uv](https://docs.astral.sh/uv/) (`pip install uv`)
+- Node.js 18+ (frontend)
+- Git on PATH
+- A SonarQube (or SonarCloud) URL and a user token
+- Claude access: the [Claude Code CLI](https://www.npmjs.com/package/@anthropic-ai/claude-code)
+  (`npm install -g @anthropic-ai/claude-code`, then `claude auth login`), or an `ANTHROPIC_API_KEY`
+- The build tools for the projects being fixed (Visual Studio / MSBuild or the .NET SDK, JDK + Maven, Node, ...)
+- A local git clone of each project, **on the branch SonarQube analysed**
 
-### System Requirements
-- **Python 3.11+** (with `pip` and `venv`)
-- **Node.js 18+** (for React frontend)
-- **Git** on PATH
-- **uv** package manager: `pip install uv`
-- **MSBuild** (for legacy .NET projects) — comes with Visual Studio
-- **dotnet CLI** (for SDK-style projects)
-
-### Accounts & Services
-- **SonarQube local instance** (http://localhost:9000 or your server URL)
-  - Project key and token from **My Account > Security > Generate Token**
-- **Bitbucket Server** (your repository URL and personal access token)
-- **Claude AI access** via Claude Code SDK (OAuth, no API key needed)
-
-### Repository
-- A local **git clone** of your C# repository
-- **Clean working tree** (no uncommitted changes — SonarFix will commit on your behalf)
-- **Branch matching the SonarQube scan** (usually `main` or `develop`)
-
----
-
-## Installation
-
-### Step 1: Clone SonarFix
+## Setup
 
 ```bash
-git clone https://github.com/your-org/sonarfix.git
-cd sonarfix
+uv sync --extra all
+cd frontend && npm install && cd ..
+cp .env.example .env      # then fill it in; see below
 ```
 
-### Step 2: Install Dependencies
-
-```bash
-# Python backend
-uv sync
-
-# React frontend
-cd frontend
-npm install
-cd ..
-```
-
-### Step 3: Initialize the Database
-
-```bash
-uv run sonarfix init-db
-```
-
-This creates `data/sonarfix.db` (SQLite) with tables for projects, issues, fix plans, and runs.
-
----
+The database is created automatically on first start (`uv run sonarfix init-db` does it by hand).
 
 ## Configuration
 
-### Step 1: Environment Variables
+Everything is in `.env` (see [.env.example](.env.example), which lists every setting). The essentials:
 
-Copy the template and fill in your details:
+| Setting | Purpose |
+|---|---|
+| `SONAR_URL`, `SONAR_TOKEN`, `SONAR_ORG` | SonarQube access (`SONAR_ORG` for SonarCloud only) |
+| `SONARFIX_ENGINE` | `claude-code` (your Claude login, no API key) or `deepagents` (needs `ANTHROPIC_API_KEY` or a local model) |
+| `SONARFIX_MODEL` | Claude model; also switchable on the Settings page |
+| `BITBUCKET_TOKEN`, `BITBUCKET_USERNAME` | Pull requests on Bitbucket |
+| `AZURE_DEVOPS_TOKEN` | Pull requests on Azure DevOps (PAT with Code read & write) |
+| `SONARFIX_BUILD_ENABLED`, `SONARFIX_BUILD_TIMEOUT` | Build verification on/off, seconds per command |
+| `SONARFIX_MAX_AI_OCCURRENCES` | Caps the occurrences sent to one AI session |
 
-```bash
-cp .env.example .env
-```
+Check the setup with `uv run sonarfix check` (add `--live` to make a real model call).
 
-**Required:**
-
-```env
-# SonarQube
-SONAR_URL=http://localhost:9000/
-SONAR_TOKEN=sqp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-SONAR_ORG=                           # Leave blank for self-hosted; required for SonarCloud
-
-# Claude (OAuth via Claude Code SDK — no API key)
-SONARFIX_ENGINE=claude-code
-SONARFIX_MODEL=claude-haiku-4-5-20251001    # Use Haiku for cost efficiency
-
-# Bitbucket
-BITBUCKET_TOKEN=BBDC-xxxxx
-BITBUCKET_USERNAME=your-username
-
-# Azure DevOps Repos (alternative to Bitbucket; chosen by the clone's origin)
-AZURE_DEVOPS_TOKEN=your-pat
-
-# Local paths
-SONARFIX_DB=data/sonarfix.db
-SONARFIX_API_URL=http://127.0.0.1:8000
-SONARFIX_CONTEXT_RADIUS=40
-```
-
-**Optional:**
-
-```env
-# To use a cloud SonarQube instead of localhost
-SONAR_URL=https://sonarcloud.io/
-
-# Logging
-SONARFIX_LOG_LEVEL=INFO
-```
-
-### Step 2: Verify Configuration
+## Run
 
 ```bash
-uv run sonarfix check
+# terminal 1 - backend (http://127.0.0.1:8000, API docs at /docs)
+uv run uvicorn sonarfix.api.main:app --port 8000
+
+# terminal 2 - frontend (http://localhost:5173)
+cd frontend && npm run dev
 ```
 
-This verifies:
-- ✅ SonarQube connectivity
-- ✅ Git is available
-- ✅ Database is initialized
-- ✅ Claude Code SDK is configured
+Open http://localhost:5173. The **Settings** page can store credentials, install and sign in to Claude Code,
+and choose the model, so you can start with an empty `.env`.
 
----
-
-## Demo Setup
-
-### Quick Start with DomainUpdateService
-
-Use the included demo script to pull a real C# project and scan it:
+### Packaged app (Windows)
 
 ```bash
-# Copies source from the scanned tree, initializes git, imports issues
-uv run python scripts/demo_setup.py
-
-# Optional: pre-warm AI analysis for the top 3 issues (takes 5-10 min)
-uv run python scripts/demo_setup.py --prewarm
+cd frontend && VITE_API_URL="" npm run build && cd ..
+uv run --extra all pyinstaller build/sonarfix.spec --noconfirm --distpath build/dist --workpath build/work
 ```
 
-This creates:
-- `demo/DomainUpdateService/` — git repository
-- 191 real SonarQube findings in the database
-- Issue summary (14 mechanical, 177 AI-fixable in 30 groups)
+This produces a single `SonarFix.exe`. It serves the UI itself and opens the browser. Its settings and database
+live in `%LOCALAPPDATA%\SonarFix`.
 
-Output:
-```
-[OK]   copied 21 file(s) from the scanned tree
-[OK]   git repository ready on 'main'
-[OK]   imported 191 issue(s) from SonarQube
-[OK]   every issue resolves to a file in the repo
+## Using it
 
-  191 issue(s) in 31 pattern(s)
-      14  deterministic recipe   (no model call)
-     177  need analysis          (30 group(s))
-       0  skipped
-```
+1. **Projects** - sync from SonarQube, bind each project to its local clone (or auto-clone), open it.
+2. **Issues / Plan** - choose the SonarQube branch, review the groups, tick the mechanical groups and approve the
+   AI groups you want, optionally add notes for the AI, then run the batch.
+3. **Batch** - watch the steps and the activity log. When it reaches *awaiting build*, click **Build**.
+4. **Build passed** - review the diff and build log, then **Send PR**.
+   **Build failed** - read the explanation, apply a recommendation (or retry with your own notes), or give up.
+   Either way the branch is kept, so nothing is lost.
 
----
+## Layout
 
-## Running the System
+| Path | What it is |
+|---|---|
+| `frontend/` | React UI (Vite) |
+| `src/sonarfix/api/` | FastAPI routes |
+| `src/sonarfix/core/` | Planning, recipes, batch runs, build verification, build-failure summaries, activity log, SonarQube / git / PR clients |
+| `prompts/` | System prompts for the analysis and fix agents |
+| `build/` | PyInstaller spec and launcher for `SonarFix.exe` |
 
-### Terminal 1: Start the FastAPI Backend
+## Limits
 
-```bash
-cd /path/to/sonarfix
-uv run uvicorn sonarfix.api.main:app --reload --port 8000
-```
-
-You should see:
-```
-INFO:     Uvicorn running on http://127.0.0.1:8000
-INFO:     OpenAPI docs available at http://127.0.0.1:8000/docs
-```
-
-### Terminal 2: Start the React Frontend
-
-```bash
-cd /path/to/sonarfix/frontend
-npm run dev
-```
-
-You should see:
-```
-Local:   http://localhost:5173/
-```
-
-### Terminal 3: Open the Browser
-
-Navigate to **http://localhost:5173** and you're ready to go!
-
----
-
-## Using the UI
-
-### Screen 1: Projects
-
-**What you see:**
-- List of all SonarQube projects
-- Issue counts per project (by severity)
-- "Sync from SonarQube" button
-
-**What to do:**
-1. Click **"Sync from SonarQube"** to fetch the latest issues
-2. Click a project to view its issues
-
-### Screen 2: Issues List
-
-**What you see:**
-- All issues for the selected project
-- Filters: Severity (BLOCKER / CRITICAL / MAJOR / MINOR / INFO)
-- Type (CODE_SMELL / BUG / VULNERABILITY)
-- Download HTML report button
-
-**What to do:**
-1. (Optional) Filter by severity or type
-2. Click an issue to see details
-
-### Screen 3: Issue Detail & Analysis
-
-**What you see:**
-1. Issue title, rule, severity, file path, and line number
-2. Rule description (click to expand)
-3. Code context (surrounding lines)
-4. "Analyze with AI" button
-
-**When you click "Analyze with AI":**
-1. A spinning robot emoji appears
-2. You see Claude's live thinking process (progressive text reveal, 3 chars every 10ms)
-3. Confidence score appears when complete
-4. Root cause, impact, and remediation plan show below
-
-**Example thinking display:**
-```
-🤖 Claude is analyzing…
-
-This is a constructor calling an overridable method 'OnStop', which violates the 
-virtual method call anti-pattern. When a subclass overrides 'OnStop', its code 
-runs during the parent's initialization, before fields are set up, causing null…
-▌
-```
-
-**When you click "Approve and generate fix":**
-1. Backend creates a feature branch: `sonarfix/batch-N` or `sonarfix/issue-ID`
-2. Code is modified (either mechanical recipe or AI-generated)
-3. Diff is shown
-4. Commit message and PR description are generated
-5. Build verification runs (rebuilds only the blast radius)
-6. PR is opened on Bitbucket Server (for human review, never auto-merged)
-
-### Dependency tracker and upgrade analysis
-
-Open a project's **Dependencies** page and click **Scan dependencies**. SonarFix lists every package with a known
-vulnerability (NuGet, npm, Maven, Gradle) *and* every direct dependency behind its latest release.
-
-Expand a row and click **Analyze upgrade**. SonarFix copies the repo to a scratch folder, upgrades just that package
-there, then rebuilds and retests the owning project. You get a verdict - **Safe**, **Upgrade with care** or
-**Risky (breaks)** - plus the manifest diff, the packages that move with it (npm), compiler/test errors, the source files
-that import the package, and a link to the release notes. Your working tree is never modified.
-
-Build verification (used for fixes and for upgrade trials) covers C#/.NET, C++, Maven, Gradle and npm
-(JavaScript, TypeScript, Angular - Angular is build-verified only since its tests need a browser).
-
-### Download HTML Report
-
-Click **"Download HTML report"** to export a summary of all issues, fixes applied, and status.
-
----
-
-## Architecture
-
-### System Diagram
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    React UI (http://localhost:5173)     │
-│         - Issue list, filters, analyze button          │
-│         - Live thinking display                        │
-│         - Approve/reject UI                            │
-└──────────────────┬──────────────────────────────────────┘
-                   │ HTTP
-                   ▼
-┌─────────────────────────────────────────────────────────┐
-│         FastAPI Backend (http://127.0.0.1:8000)         │
-│  - Project management (/projects/sync)                 │
-│  - Issue fetching (/projects/{key}/sync-issues)        │
-│  - Analysis orchestration (/issues/{id}/analyze)       │
-│  - Fix application (/issues/{id}/approve)              │
-└──────────────────┬──────────────────────────────────────┘
-                   │
-        ┌──────────┼──────────┐
-        ▼          ▼          ▼
-   ┌────────┐ ┌────────┐ ┌─────────┐
-   │ SQLite │ │ SonarQube │ │ Claude  │
-   │  DB    │ │   API  │ │ Code SDK│
-   │        │ │        │ │ (OAuth) │
-   └────────┘ └────────┘ └─────────┘
-        │          │          │
-   Issues,    Fetch rules,  AI analysis
-   plans      find issues   & fix gen
-```
-
-### Component Breakdown
-
-| Component | Purpose | Language |
-|-----------|---------|----------|
-| **frontend/** | React UI with live thinking | TypeScript/React |
-| **src/sonarfix/api/** | FastAPI routes | Python |
-| **src/sonarfix/core/** | Business logic (recipes, clustering, planning) | Python |
-| **agents/** (optional) | PowerShell discovery agents for monorepo scanning | PowerShell |
-| **data/sonarfix.db** | SQLite database (issues, fix plans, runs) | SQLite |
-
-### Workflow Steps
-
-```
-1. SYNC
-   ├─ Fetch projects from SonarQube
-   ├─ Fetch issues for each project
-   └─ Store in database
-
-2. ANALYZE
-   ├─ Group issues by (rule_key, normalized_code_hash)
-   ├─ Show live AI thinking (progressive text reveal)
-   ├─ Generate root cause, impact, remediation plan
-   └─ Store plan in database (awaiting_approval = true)
-
-3. APPROVE/REJECT
-   ├─ Human reviews the plan
-   └─ If approved: continue to APPLY
-
-4. APPLY
-   ├─ Create feature branch (sonarfix/batch-N)
-   ├─ Route to recipe OR AI fix generator
-   ├─ Commit changes with message
-   ├─ Run build verification (blast radius only)
-   └─ Open PR on Bitbucket Server
-
-5. REVIEW & MERGE
-   ├─ Human reviews the PR
-   ├─ Approves or requests changes
-   └─ Merges manually (SonarFix never merges)
-```
-
----
-
-## Production Deployment
-
-### Step 1: Point to Your Real Repository
-
-Instead of the demo, use your own C# monorepo:
-
-```bash
-uv run python scripts/setup_repo.py \
-  --source "C:\path\to\your\monorepo" \
-  --project "YOUR_SONAR_PROJECT_KEY" \
-  --dest "C:\sonarfix\working\copy"
-```
-
-Or manually:
-```bash
-cp -r /path/to/your/repo /sonarfix/repo-copy
-cd /sonarfix/repo-copy && git checkout main && git status  # Must be clean!
-```
-
-### Step 2: Sync Issues from SonarQube
-
-```bash
-# Via API
-curl -X POST http://127.0.0.1:8000/projects/YOUR_KEY/sync-issues
-
-# Or via UI: click "Sync from SonarQube"
-```
-
-### Step 3: Run Analysis in Batches
-
-**Do NOT enable all issues at once** — AI analysis costs real tokens.
-
-Instead:
-1. Filter by **BLOCKER** severity (smallest batch)
-2. Approve and fix a few
-3. Monitor cost & quality
-4. Expand to **CRITICAL** and **MAJOR**
-
-**Cost estimate (with Haiku):**
-- Per issue: $0.01–$0.02
-- Per group (clustered): $0.05–$0.10
-- For 191 issues in 30 groups: ~$2–$5 total
-
-### Step 4: Configure Automatic Deployment (Optional)
-
-Set up a **Bitbucket webhook** to trigger SonarFix when new scans arrive:
-
-```python
-# webhook handler (pseudocode)
-@app.post("/webhook/sonarqube")
-async def on_sonarqube_scan(payload):
-    project_key = payload["project"]["key"]
-    await service.sync_issues(project_key)
-    # Optionally: analyze top N issues automatically
-    return {"status": "synced"}
-```
-
----
+- Fixes are only as good as the recipes and the AI; review every diff.
+- C# / .NET is the best-covered ecosystem; others rely mostly on AI sessions.
+- Fixes land on a local clone, so the clone must match the branch SonarQube scanned, otherwise line numbers drift.
+- A project with no matching buildable project, or no build tool on the machine, is reported as
+  *not verified* - that is never treated as a pass.
 
 ## Troubleshooting
 
-### Issue: "Not a git repository"
-
-**Cause:** Repository doesn't have a `.git` folder or was corrupted.
-
-**Fix:**
-```bash
-cd /path/to/repo
-git init
-git add -A
-git commit -m "Initial commit"
-```
-
-### Issue: "Build verification failed"
-
-**Cause:** The fix broke the build.
-
-**Solution:**
-1. Check the error in the UI
-2. Reject the plan
-3. Re-analyze (AI will see the error message)
-4. Approve the revised fix
-
-### Issue: "SonarQube returned no issues"
-
-**Cause:**
-- Wrong project key
-- Issues are resolved/closed in SonarQube
-- Token lacks permissions
-
-**Fix:**
-1. Verify SONAR_TOKEN has access to the project
-2. Check SONAR_URL (localhost vs SonarCloud)
-3. Run `sonarqube:sonarqube scan` manually to force a new scan
-
-### Issue: "Claude Code SDK not found"
-
-**Cause:** CLI not installed.
-
-**Fix:**
-```bash
-npm install -g @anthropic-ai/claude-code
-claude auth login  # OAuth flow
-```
-
-### Issue: Analysis is very slow (5+ min per issue)
-
-**Cause:** Using Opus model instead of Haiku.
-
-**Fix:**
-Edit `.env`:
-```env
-SONARFIX_MODEL=claude-haiku-4-5-20251001
-```
-
-Restart the backend and retry.
-
-### Issue: "FOREIGN KEY constraint failed"
-
-**Cause:** Database has orphaned fix_plans referencing deleted issues.
-
-**Fix:**
-```bash
-rm data/sonarfix.db
-uv run sonarfix init-db
-```
-
-(Your issues will re-sync from SonarQube.)
-
----
-
-## Advanced: Model Switching
-
-### Use Opus for Quality-Critical Fixes
-
-Some rules require deeper analysis. Switch to **Claude Opus 5** for those:
-
-```env
-# .env
-SONARFIX_MODEL=claude-opus-5-5    # For complex fixes
-```
-
-**Cost vs. Speed:**
-| Model | Cost per issue | Speed | Best for |
-|-------|---|---|---|
-| Haiku | $0.01–$0.02 | 30–60s | High-volume demos, straightforward fixes |
-| Opus | $0.10–$0.20 | 3–5m | Critical security fixes, architecture changes |
-
-### Use Local LLM (Ollama)
-
-For offline analysis without costs:
-
-```bash
-# Install Ollama: https://ollama.ai
-ollama pull qwen2.5-coder:14b
-
-# .env
-SONARFIX_ENGINE=ollama
-SONARFIX_MODEL=qwen2.5-coder:14b
-SONARFIX_LLM_BASE_URL=http://localhost:11434
-```
-
----
-
-## What SonarFix Can & Cannot Do
-
-### ✅ Can Do
-- Fix **straightforward code issues** (unused imports, commented code, rethrows)
-- Explain **why an issue matters** (root cause, impact)
-- Generate **PR descriptions** with remediation details
-- Handle **monorepos** (144+ solutions, 861+ projects)
-- **Batch analyze** similar issues (30 groups from 191 issues)
-- Create branches, commits, and PRs (never merge)
-
-### ❌ Cannot Do
-- Fix **architecture/design issues** (needs refactoring)
-- Support **non-C# projects** (Java, Python, JS need recipe definitions)
-- **Auto-merge PRs** (human review is required)
-- Fix issues **without code context** (file-wide issues fail)
-- Handle **build failures** (gates at verification step)
-
----
-
-## Support & Feedback
-
-- **Questions?** Check the [troubleshooting](#troubleshooting) section
-- **Found a bug?** Open an issue on GitHub
-- **Want a feature?** Describe it in a GitHub discussion
-
----
+- **"Not a git repository"** - the bound folder has no `.git`; bind the real clone.
+- **Build failed with missing libraries** - usually your machine, not the fix: connect to the VPN, build the
+  solution once in Visual Studio, then retry. The failure view says which.
+- **No issues returned** - check the token's access to the project, `SONAR_URL`, and the selected SonarQube branch.
+- **Claude not found** - `npm install -g @anthropic-ai/claude-code`, then `claude auth login` (or use the Settings page).
+- **Fix isn't visible in Visual Studio** - it is committed on its own branch; use *Review and build locally* on the
+  batch page, or `git checkout <branch>`.
 
 ## License
 
-Proprietary — Unisys Internal Use Only
-
----
-
-**Last updated:** September 2026  
-**Version:** 1.0  
-**Model:** Claude Haiku 4.5 (default)
+Proprietary - Unisys internal use only.

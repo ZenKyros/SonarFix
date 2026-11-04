@@ -10,7 +10,7 @@ from langgraph.types import Command
 
 from . import graph as workflow
 from . import issues as issues_
-from . import sonar, store
+from . import activity, sonar, store
 from .config import CLAUDE_MODELS, ConfigError, get_settings
 from .repo import RepoError, RepoWorkspace
 from .repo_binding import project_with_repo
@@ -71,6 +71,60 @@ def set_repo_path(project_key: str, repo_path: str) -> dict[str, Any]:
     return project
 
 
+def sonar_branches(project_key: str) -> dict[str, Any]:
+    """Branches SonarQube has analysed for the project, and which one is selected."""
+    if not store.get_project(project_key):
+        raise ServiceError(f"Unknown project: {project_key}. Sync projects first.")
+    composite = issues_.COMPOSITE_PROJECTS.get(project_key)
+    lookup = composite["component_keys"][0] if composite else project_key
+    branches = sonar.list_branches(lookup)
+    main = next((b["name"] for b in branches if b["is_main"]), None)
+    return {
+        "branches": branches,
+        "selected": issues_.sonar_branch_for(project_key) or main,
+        "main": main,
+    }
+
+
+def set_sonar_branch(project_key: str, branch: str | None) -> dict[str, Any]:
+    """Fetch this project's issues from another SonarQube branch.
+
+    Fixes are made on the local clone, so the clone's base branch should be
+    the same branch SonarQube analysed - when the clone has a branch with that
+    name, it becomes the base for new fix branches. If it doesn't, say so
+    rather than silently fixing the wrong code.
+    """
+    project = store.get_project(project_key)
+    if not project:
+        raise ServiceError(f"Unknown project: {project_key}. Sync projects first.")
+    info = sonar_branches(project_key)
+    names = {b["name"] for b in info["branches"]}
+    if branch and branch not in names:
+        raise ServiceError(f"SonarQube has no analysed branch named {branch!r} for this project.")
+    # A composite project has its own built-in branch, so "main" must be stored
+    # explicitly there; for everything else main is simply "no override".
+    is_composite = project_key in issues_.COMPOSITE_PROJECTS
+    chosen = None if (not branch or (branch == info["main"] and not is_composite)) else branch
+    store.set_sonar_branch(project_key, chosen)
+
+    git_note = None
+    target = chosen or info["main"]
+    if project.get("repo_path") and target:
+        try:
+            workspace = RepoWorkspace(project["repo_path"])
+            if workspace.branch_exists(target):
+                store.set_default_branch(project_key, target)
+            else:
+                git_note = (
+                    f"Your local repo has no git branch named {target!r}. Run `git fetch` and "
+                    f"`git checkout {target}` in it, otherwise fixes are based on "
+                    f"{project.get('default_branch') or 'the current branch'} and may not match the issues."
+                )
+        except RepoError:
+            pass
+    return {**sonar_branches(project_key), "git_note": git_note}
+
+
 def sync_issues(project_key: str) -> dict[str, Any]:
     """Refresh the local snapshot the Batch/Plan screen plans against.
 
@@ -86,10 +140,10 @@ def sync_issues(project_key: str) -> dict[str, Any]:
     composite = issues_.COMPOSITE_PROJECTS.get(project_key)
     if composite:
         raws = sonar.list_issues(
-            ",".join(composite["component_keys"]), branch=composite["branch"]
+            ",".join(composite["component_keys"]), branch=issues_.sonar_branch_for(project_key)
         )
     else:
-        raws = sonar.list_issues(project_key)
+        raws = sonar.list_issues(project_key, branch=issues_.sonar_branch_for(project_key))
 
     # Monorepo sub-projects (see issues_.COMPOSITE_PROJECTS) report file
     # paths relative to their own sonar.sources root, not the git repo root.
@@ -170,7 +224,41 @@ def list_issues(
         issue["pr_url"] = found["pr_url"] if found else None
         issue["has_pr"] = bool(found and found["pr_url"])
         issue["fix_status"] = ("pr_open" if issue["has_pr"] else "applied") if found else None
+    fps = store.false_positives_for(i["id"] for i in issues)
+    for issue in issues:
+        fp = fps.get(issue["id"])
+        issue["false_positive"] = (
+            {"reason": fp["reason"], "source": fp["source"], "marked_at": fp["updated_at"]}
+            if fp and fp["status"] == "marked" else None
+        )
+        issue["fp_suggested"] = bool(fp and fp["status"] == "suggested")
     return issues
+
+
+def mark_false_positive(issue_id: str, reason: str = "") -> dict[str, Any]:
+    """Set an issue aside as a false positive - in SonarFix only.
+
+    SonarQube is deliberately not touched: this is a local reference so the
+    issue leaves the open list and is never planned or fixed here.
+    """
+    issue = issues_.fetch_one(issue_id)
+    if not issue:
+        raise ServiceError(f"Unknown issue: {issue_id}. It may already be resolved in SonarQube.")
+    previous = store.get_false_positive(issue_id)
+    source = "ai" if previous and previous["source"] == "ai" else "manual"
+    text = (reason or (previous or {}).get("reason") or "").strip()
+    store.set_false_positive(issue_id, issue.get("project_key"), "marked", source, text)
+    activity.log("review", f"Marked as false positive: {issue.get('rule')}",
+                 f"{issue.get('file_path')}:{issue.get('line')}\n{text}".strip(),
+                 project_key=issue.get("project_key"))
+    return store.get_false_positive(issue_id) or {}
+
+
+def unmark_false_positive(issue_id: str) -> dict[str, Any]:
+    """Move an issue back to the open list."""
+    store.clear_false_positive(issue_id)
+    activity.log("review", f"Moved back to open: {issue_id}")
+    return {"issue_id": issue_id, "false_positive": None}
 
 
 def issue_facets(project_key: str) -> dict[str, list[str]]:
@@ -198,6 +286,11 @@ def dashboard_summary() -> dict[str, Any]:
     for project in store.list_projects():
         key = project["key"]
         issues = store.list_issues(key)
+        marked = {
+            i for i, fp in store.false_positives_for(x["id"] for x in issues).items()
+            if fp["status"] == "marked"
+        }
+        issues = [x for x in issues if x["id"] not in marked]
         fix_status = store.fix_status_by_issue(key)
         batch_status = store.batch_status_by_issue(key)
         combined = {**fix_status, **batch_status}
@@ -231,6 +324,7 @@ def dashboard_summary() -> dict[str, Any]:
             "name": project["name"],
             "repo_configured": bool((store.get_project(key) or project).get("repo_path")),
             "last_synced_at": project.get("last_synced_at"),
+            "false_positives": len(marked),
             "total_issues": len(issues),
             "open_issues": len(issues) - fixed_count,
             "fixed_issues": fixed_count,
@@ -310,7 +404,11 @@ def issue_detail(issue_id: str) -> dict[str, Any]:
         raise ServiceError(f"Unknown issue: {issue_id}")
 
     project = project_with_repo(issue["project_key"]) or {}
+    fp = store.get_false_positive(issue_id)
     detail: dict[str, Any] = {
+        "false_positive": (
+            {"status": fp["status"], "source": fp["source"], "reason": fp["reason"]} if fp else None
+        ),
         "issue": issue,
         "project": project,
         "rule": None,
@@ -378,6 +476,19 @@ def analyze_issue(issue_id: str) -> dict[str, Any]:
         result = workflow.build_graph().invoke({"issue_id": issue_id}, config=config)
     except ValueError as exc:
         raise ServiceError(str(exc)) from exc
+
+    analysis = result.get("analysis") or {}
+    existing = store.get_false_positive(issue_id)
+    if analysis.get("false_positive"):
+        # The AI's opinion only - a human still has to confirm it.
+        if not existing or existing["status"] != "marked":
+            store.set_false_positive(
+                issue_id, None, "suggested", "ai", analysis.get("false_positive_reason") or ""
+            )
+        activity.log("ai", "AI thinks this is a false positive",
+                     analysis.get("false_positive_reason") or "", level="warn")
+    elif existing and existing["status"] == "suggested":
+        store.clear_false_positive(issue_id)
 
     return {
         "issue_id": issue_id,

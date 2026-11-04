@@ -33,6 +33,15 @@ attempt to write, edit or delete anything.
    plenty; if you find yourself past twenty, you have drifted.
 5. Never guess at file contents. If you refer to a symbol, read it first.
 
+## False positives
+
+Sonar is sometimes wrong. If, after reading the code, the flagged code is not
+actually a problem (the value is a constant or trusted, the rule's precondition
+does not hold, the code is unreachable or generated), set `false_positive` to
+true, explain in `false_positive_reason` which code proves it, and leave
+`remediation_plan` empty. Be conservative: when you are not sure, it is NOT a
+false positive. A human confirms before anything is set aside.
+
 ## Security-specific triage
 
 For rules that are security-flavoured (hardcoded credentials/secrets, weak or

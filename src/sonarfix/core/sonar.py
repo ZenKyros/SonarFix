@@ -148,6 +148,23 @@ def list_projects() -> list[dict[str, str]]:
     ]
 
 
+def list_branches(project_key: str) -> list[dict[str, Any]]:
+    """The branches SonarQube has analysed for a project (main branch first)."""
+    with _client() as client:
+        payload = _get(client, "/api/project_branches/list", project=project_key.split(",")[0])
+    branches = [
+        {
+            "name": b.get("name"),
+            "is_main": bool(b.get("isMain")),
+            "type": b.get("type"),
+            "status": (b.get("status") or {}).get("qualityGateStatus"),
+            "analysed_at": b.get("analysisDate"),
+        }
+        for b in payload.get("branches", [])
+    ]
+    return sorted(branches, key=lambda b: (not b["is_main"], b["name"] or ""))
+
+
 def list_issues(project_key: str, branch: str | None = None) -> list[dict[str, Any]]:
     """All unresolved issues for a project (or comma-separated component keys),
     following pagination. `branch` restricts results to one analysed branch."""

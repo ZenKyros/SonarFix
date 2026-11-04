@@ -405,6 +405,63 @@ def retry_with_feedback(batch_id: int, feedback: str = "") -> int:
     return new_id
 
 
+def _local_workspace(batch_id: int) -> tuple[dict[str, Any], RepoWorkspace]:
+    row = store.get_batch(batch_id)
+    if not row:
+        raise BatchError(f"Unknown batch: {batch_id}")
+    if not row.get("branch") or not row.get("base_branch"):
+        raise BatchError("This batch has no branch in your local repo.")
+    project = store.get_project(row["project_key"]) or {}
+    if not project.get("repo_path"):
+        raise BatchError("This project has no local repo path.")
+    return row, RepoWorkspace(project["repo_path"])
+
+
+def local_review(batch_id: int) -> dict[str, Any]:
+    """Where the fix lives in the user's own repo, and how to look at it there."""
+    row, workspace = _local_workspace(batch_id)
+    base, branch = row["base_branch"], row["branch"]
+    current = workspace.current_branch()
+    return {
+        "repo_path": str(workspace.path),
+        "branch": branch,
+        "base_branch": base,
+        "current_branch": current,
+        "on_branch": current == branch,
+        "files": workspace.diff_files_between(base, branch),
+        "commands": [
+            f'cd "{workspace.path}"',
+            f"git checkout {branch}",
+            f"git diff {base}...{branch} --stat",
+            f"git checkout {current if current != branch else base}",
+        ],
+    }
+
+
+def checkout_locally(batch_id: int) -> dict[str, Any]:
+    """Switch the user's repo onto the batch branch so they can open and build it in Visual Studio."""
+    row, workspace = _local_workspace(batch_id)
+    if workspace.is_dirty():
+        raise BatchError(
+            "Your repo has uncommitted changes. Commit or stash them first, then try again."
+        )
+    workspace.checkout(row["branch"])
+    activity.log("review", f"Repo switched to {row['branch']}", f"{workspace.path}",
+                 batch_id=batch_id, project_key=row["project_key"])
+    return local_review(batch_id)
+
+
+def return_to_base(batch_id: int) -> dict[str, Any]:
+    """Switch the user's repo back to the branch the batch started from."""
+    row, workspace = _local_workspace(batch_id)
+    if workspace.is_dirty():
+        raise BatchError("Your repo has uncommitted changes. Commit or stash them first.")
+    workspace.checkout(row["base_branch"])
+    activity.log("review", f"Repo switched back to {row['base_branch']}", f"{workspace.path}",
+                 batch_id=batch_id, project_key=row["project_key"])
+    return local_review(batch_id)
+
+
 def abandon(batch_id: int) -> dict[str, Any]:
     """A build failed and the reviewer is done retrying - mark it terminal."""
     batch_row = store.get_batch(batch_id)

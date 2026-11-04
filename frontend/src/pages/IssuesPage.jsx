@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import BranchPicker from "../components/BranchPicker";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
 import SeverityBadge, { SEVERITY_LABEL } from "../components/SeverityBadge";
@@ -101,11 +102,17 @@ export default function IssuesPage() {
     }
   };
 
-  const fixedCount = useMemo(() => issues.filter((i) => i.fix_status).length, [issues]);
-  const openCount = issues.length - fixedCount;
+  const fpCount = useMemo(() => issues.filter((i) => i.false_positive).length, [issues]);
+  const fixedCount = useMemo(() => issues.filter((i) => i.fix_status && !i.false_positive).length, [issues]);
+  const openCount = issues.length - fixedCount - fpCount;
 
   const tabIssues = useMemo(
-    () => issues.filter((i) => (tab === "fixed" ? i.fix_status : !i.fix_status)),
+    () =>
+      issues.filter((i) => {
+        if (tab === "false") return Boolean(i.false_positive);
+        if (i.false_positive) return false;
+        return tab === "fixed" ? i.fix_status : !i.fix_status;
+      }),
     [issues, tab]
   );
 
@@ -169,6 +176,8 @@ export default function IssuesPage() {
         </p>
       </div>
 
+      <BranchPicker projectKey={projectKey} onChanged={handleSync} onError={setError} />
+
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
       <div className="page-tabs">
@@ -177,6 +186,9 @@ export default function IssuesPage() {
         </button>
         <button className={`page-tab ${tab === "fixed" ? "active" : ""}`} onClick={() => setTab("fixed")}>
           ✓ Fixed <span className="count-pill">{fixedCount}</span>
+        </button>
+        <button className={`page-tab ${tab === "false" ? "active" : ""}`} onClick={() => setTab("false")}>
+          False positive <span className="count-pill">{fpCount}</span>
         </button>
       </div>
 

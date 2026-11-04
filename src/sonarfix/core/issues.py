@@ -115,13 +115,25 @@ def _normalize(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def sonar_branch_for(project_key: str) -> str | None:
+    """The SonarQube branch to read: the user's pick, else a composite
+    project's fixed branch, else None (SonarQube's main branch)."""
+    from . import store
+
+    picked = (store.get_project(project_key) or {}).get("sonar_branch")
+    if picked:
+        return picked
+    composite = COMPOSITE_PROJECTS.get(project_key)
+    return composite["branch"] if composite else None
+
+
 def fetch_many(project_key: str) -> list[dict[str, Any]]:
     """Every open issue for `project_key`, fetched live and normalized."""
     composite = COMPOSITE_PROJECTS.get(project_key)
     if composite:
-        raws = sonar.list_issues(",".join(composite["component_keys"]), branch=composite["branch"])
+        raws = sonar.list_issues(",".join(composite["component_keys"]), branch=sonar_branch_for(project_key))
     else:
-        raws = sonar.list_issues(project_key)
+        raws = sonar.list_issues(project_key, branch=sonar_branch_for(project_key))
     return [_normalize(r) for r in raws]
 
 
