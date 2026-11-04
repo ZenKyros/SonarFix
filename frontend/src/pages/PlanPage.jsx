@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
-import BeforeAfter from "../components/BeforeAfter";
 import DiffBlock from "../components/DiffBlock";
 import ErrorBanner from "../components/ErrorBanner";
 import SeverityBadge from "../components/SeverityBadge";
@@ -9,19 +8,14 @@ import StatTile from "../components/StatTile";
 import Stepper from "../components/Stepper";
 import BuildStatusBadge from "../components/BuildStatusBadge";
 import TerminalLog from "../components/TerminalLog";
+import BuildFailureSummary from "../components/BuildFailureSummary";
 
 const SECTIONS = [
   {
-    bucket: "mechanical",
-    title: "Mechanical fixes",
-    tag: "0 tokens",
-    blurb: "Deterministic recipes checked against the exact code Sonar flagged. Pre-selected.",
-  },
-  {
     bucket: "ai",
-    title: "Needs AI",
-    tag: "approval required",
-    blurb: "These need judgement. Nothing runs until you select a group and approve it — one AI session per group, not per issue.",
+    title: "Issues to fix",
+    tag: "AI",
+    blurb: "Untick anything you don't want touched, then click Fix with AI. One AI session runs per group of similar issues.",
   },
   {
     bucket: "skip",
@@ -42,7 +36,6 @@ export default function PlanPage() {
   const [selected, setSelected] = useState(new Set());
   const [open, setOpen] = useState(new Set());
   const [notes, setNotes] = useState("");
-  const [approved, setApproved] = useState(false);
   const [running, setRunning] = useState(false);
 
   const loadResolved = () =>
@@ -56,7 +49,7 @@ export default function PlanPage() {
       .plan(projectKey)
       .then((data) => {
         setPlan(data);
-        setSelected(new Set(data.groups.filter((g) => g.bucket === "mechanical").map((g) => g.id)));
+        setSelected(new Set(data.groups.filter((g) => g.bucket === "ai").map((g) => g.id)));
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : String(err)));
     api.listBatches(projectKey).then(setBatches).catch(() => {});
@@ -65,21 +58,15 @@ export default function PlanPage() {
   }, [projectKey]);
 
   const byBucket = useMemo(() => {
-    const out = { mechanical: [], ai: [], skip: [] };
+    const out = { ai: [], skip: [] };
     for (const g of plan?.groups || []) out[g.bucket].push(g);
     return out;
   }, [plan]);
 
   const picked = useMemo(() => {
     const groups = (plan?.groups || []).filter((g) => selected.has(g.id));
-    const mech = groups.filter((g) => g.bucket === "mechanical");
     const ai = groups.filter((g) => g.bucket === "ai");
-    return {
-      mech,
-      ai,
-      mechIssues: mech.reduce((n, g) => n + g.unique, 0),
-      aiIssues: ai.reduce((n, g) => n + g.unique, 0),
-    };
+    return { ai, aiIssues: ai.reduce((n, g) => n + g.unique, 0) };
   }, [plan, selected]);
 
   const toggle = (setter, id) =>
@@ -96,17 +83,16 @@ export default function PlanPage() {
       return next;
     });
 
-  const needsApproval = picked.ai.length > 0 && !approved;
-  const nothing = picked.mech.length + picked.ai.length === 0;
+  const nothing = picked.ai.length === 0;
 
   const run = async () => {
     setError(null);
     setRunning(true);
     try {
       const batch = await api.createBatch(projectKey, {
-        mechanical: picked.mech.map((g) => g.id),
+        mechanical: [],
         ai: picked.ai.map((g) => g.id),
-        approve_ai: picked.ai.length > 0 && approved,
+        approve_ai: true, // clicking "Fix with AI" is the approval
         notes,
       });
       navigate(`/batches/${batch.id}`);
@@ -158,8 +144,7 @@ export default function PlanPage() {
       <div className="stats">
         <StatTile label="Open issues" value={s.total} hint={`${s.duplicates} duplicate${s.duplicates === 1 ? "" : "s"}`} />
         <StatTile label="Patterns" value={s.groups} hint="grouped by rule" />
-        <StatTile label="Mechanical" value={s.mechanical} hint="0 tokens" tone="green" />
-        <StatTile label="Needs AI" value={s.ai} hint={`${s.ai_groups} group${s.ai_groups === 1 ? "" : "s"}`} tone="amber" />
+        <StatTile label="To fix" value={s.ai} hint={`${s.ai_groups} group${s.ai_groups === 1 ? "" : "s"}`} tone="amber" />
         <StatTile label="Skipped" value={s.skip} hint="vendored / generated" tone="muted" />
       </div>
 
@@ -214,27 +199,21 @@ export default function PlanPage() {
       <div className="actionbar">
         <div className="actionbar-inner">
           <div className="actionbar-summary">
-            <strong>{picked.mechIssues}</strong> mechanical fix{picked.mechIssues === 1 ? "" : "es"}
-            <span className="dot-sep">·</span>
-            <strong>{picked.ai.length}</strong> AI session{picked.ai.length === 1 ? "" : "s"}
-            {picked.ai.length > 0 && <span className="muted"> ({picked.aiIssues} issues)</span>}
+            <strong>{picked.aiIssues}</strong> issue{picked.aiIssues === 1 ? "" : "s"} selected
+            <span className="muted"> in {picked.ai.length} group{picked.ai.length === 1 ? "" : "s"}</span>
           </div>
           {picked.ai.length > 0 && (
             <div className="actionbar-ai">
               <input
                 className="text-input"
-                placeholder="Reviewer notes for the AI (optional)"
+                placeholder="Notes for the AI (optional)"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
-              <label className="approve">
-                <input type="checkbox" checked={approved} onChange={(e) => setApproved(e.target.checked)} />
-                I approve AI changes for the {picked.ai.length} selected group{picked.ai.length === 1 ? "" : "s"}
-              </label>
             </div>
           )}
-          <button className="btn btn-primary" disabled={nothing || needsApproval || running} onClick={run}>
-            {running ? "Starting…" : "Run selected fixes"}
+          <button className="btn btn-primary" disabled={nothing || running} onClick={run}>
+            {running ? "Starting…" : "Fix with AI"}
           </button>
         </div>
       </div>
@@ -245,7 +224,7 @@ export default function PlanPage() {
 }
 
 function GroupCard({ group, selectable, checked, onToggle, expanded, onExpand }) {
-  const title = group.recipe?.title || group.message;
+  const title = group.message;
   return (
     <li className={`group ${checked ? "is-selected" : ""}`}>
       <div className="group-row">
@@ -269,22 +248,7 @@ function GroupCard({ group, selectable, checked, onToggle, expanded, onExpand })
 
       {expanded && (
         <div className="group-body">
-          {group.bucket === "mechanical" && group.recipe && (
-            <>
-              <p className="why">
-                <strong>Why it’s safe:</strong> {group.recipe.why_safe}
-              </p>
-              <BeforeAfter before={group.recipe.before} after={group.recipe.after} />
-              <p className="caption">
-                Preview on your code — every file below, expand a row to see its change
-              </p>
-            </>
-          )}
-          {group.bucket === "ai" && (
-            <>
-              <p className="why">{group.message}</p>
-            </>
-          )}
+          {group.bucket === "ai" && <p className="why">{group.message}</p>}
           {group.bucket === "skip" && <p className="why">{group.skip_reason}</p>}
 
           <ul className="occurrences">
@@ -396,7 +360,7 @@ function ResolvedBatchCard({ batch }) {
           {(batch.steps || []).map((step, i) => (
             <div key={i} className="resolved-step">
               <strong>{step.kind === "mechanical" ? "Mechanical recipes" : step.title}</strong>
-              {step.summary && <p className="why">{step.summary}</p>}
+              {(step.summary || step.detail) && <p className="why">{step.summary || step.detail}</p>}
               {step.testing && (
                 <p className="caption"><strong>How to verify:</strong> {step.testing}</p>
               )}
@@ -431,6 +395,7 @@ function ResolvedBatchCard({ batch }) {
             </div>
           )}
 
+          <BuildFailureSummary summary={batch.build_summary} />
           <TerminalLog title="Build log" output={batch.build_output} />
           <TerminalLog title="Test log" output={batch.test_output} />
 

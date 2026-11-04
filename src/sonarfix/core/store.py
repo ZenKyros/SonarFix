@@ -321,15 +321,53 @@ def list_projects() -> list[dict[str, Any]]:
         return _rows(conn.execute("SELECT * FROM projects ORDER BY name"))
 
 
+def _repo_group(key: str) -> list[str]:
+    """`key` plus every other project key that shares its git repo.
+
+    A composite project (e.g. INF-SRC) and its real Sonar sub-projects are one
+    monorepo, but issues are filed under the composite key while a user may
+    have bound the clone through either side - so they must resolve alike.
+    """
+    from .issues import COMPOSITE_PROJECTS, composite_owning
+
+    owning = composite_owning(key)
+    composite_key = owning[0] if owning else key
+    cfg = COMPOSITE_PROJECTS.get(composite_key)
+    if not cfg:
+        return [key]
+    return [composite_key, *cfg["component_keys"]]
+
+
 def get_project(key: str) -> dict[str, Any] | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM projects WHERE key = ?", (key,)).fetchone()
-        return dict(row) if row else None
+        project = dict(row) if row else None
+        if project and project.get("repo_path"):
+            return project
+        # No clone bound under this exact key - borrow the one bound to a
+        # sibling in the same monorepo group, if any.
+        for sibling in _repo_group(key):
+            if sibling == key:
+                continue
+            other = conn.execute(
+                "SELECT * FROM projects WHERE key = ? AND repo_path IS NOT NULL AND repo_path != ''",
+                (sibling,),
+            ).fetchone()
+            if other:
+                borrowed = dict(other)
+                if project:
+                    borrowed = {**project, "repo_path": borrowed["repo_path"]}
+                    borrowed["default_branch"] = project.get("default_branch") or other["default_branch"]
+                else:
+                    borrowed["key"] = key
+                return borrowed
+        return project
 
 
 def set_repo_path(key: str, repo_path: str) -> None:
     with connect() as conn:
-        conn.execute("UPDATE projects SET repo_path = ? WHERE key = ?", (repo_path, key))
+        for member in _repo_group(key):
+            conn.execute("UPDATE projects SET repo_path = ? WHERE key = ?", (repo_path, member))
 
 
 def set_default_branch(key: str, branch: str) -> None:

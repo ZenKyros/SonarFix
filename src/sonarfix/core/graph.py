@@ -28,7 +28,8 @@ from langgraph.types import interrupt
 from . import build, engine, sonar, store
 from . import issues as issues_
 from .config import get_settings
-from .repo import RepoWorkspace, branch_prefix, is_generated_branch
+from .repo import RepoError, RepoWorkspace, branch_prefix, is_generated_branch
+from .repo_binding import project_with_repo
 from .repo_profile import profile_for
 
 class FixState(TypedDict, total=False):
@@ -228,7 +229,7 @@ def load_context(state: FixState) -> dict[str, Any]:
             f"Unknown issue: {state['issue_id']}. It may already be resolved in SonarQube."
         )
 
-    project = store.get_project(issue["project_key"])
+    project = project_with_repo(issue["project_key"])
     if not project or not project.get("repo_path"):
         raise ValueError(
             f"No local repository configured for project {issue['project_key']}. "
@@ -236,7 +237,8 @@ def load_context(state: FixState) -> dict[str, Any]:
         )
 
     workspace = RepoWorkspace(project["repo_path"])
-    file_path = issue["file_path"]
+    file_path = workspace.locate(issue["file_path"])
+    issue["file_path"] = file_path
     if not workspace.exists(file_path):
         raise ValueError(
             f"{file_path} is not present in {project['repo_path']}. "
@@ -312,13 +314,14 @@ def apply_fix(state: FixState) -> dict[str, Any]:
     if not project.get("default_branch") and not is_generated_branch(base_branch):
         store.set_default_branch(state["project_key"], base_branch)
 
-    if workspace.is_dirty():
+    try:
+        workspace.stash_changes()
+    except RepoError as exc:
         return {
             "status": "failed",
             "error": (
-                f"{state['repo_path']} has uncommitted changes. SonarFix commits "
-                "the fix for you, so it needs a clean working tree - commit or "
-                "stash your work, then retry."
+                f"Your uncommitted changes in {state['repo_path']} could not be "
+                f"stashed automatically ({exc}). Commit or stash them, then retry."
             ),
             "base_branch": base_branch,
         }

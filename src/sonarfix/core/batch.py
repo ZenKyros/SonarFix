@@ -16,7 +16,8 @@ from . import build, engine, scm, sonar, store
 from .config import get_settings
 from .planner import Group, Occurrence, SourceFile, build_groups, classify
 from .recipes import target_from
-from .repo import RepoWorkspace, branch_prefix, is_generated_branch
+from .repo import RepoError, RepoWorkspace, branch_prefix, is_generated_branch
+from .repo_binding import project_with_repo
 from .repo_profile import profile_for
 
 
@@ -39,6 +40,7 @@ def create(
     if ai and not approve_ai:
         raise BatchError("AI groups need explicit approval before they run.")
 
+    stash_note = _stash_user_changes(project_key)
     occurrences, workspace = classify(project_key)
     groups = {g.id: g for g in build_groups(occurrences)}
     for group_id in mechanical:
@@ -47,16 +49,27 @@ def create(
     for group_id in ai:
         if groups.get(group_id) is None or groups[group_id].bucket != "ai":
             raise BatchError(f"{group_id} is not an AI group in the current plan.")
-    if workspace.is_dirty():
-        raise BatchError(
-            f"{workspace.path} has uncommitted changes. Commit or stash them first - "
-            "SonarFix commits its fixes on a fresh branch."
-        )
 
-    return store.create_batch(
-        project_key,
-        {"mechanical": mechanical, "ai": ai, "notes": notes.strip()},
-    )
+    selection: dict[str, Any] = {"mechanical": mechanical, "ai": ai, "notes": notes.strip()}
+    if stash_note:
+        selection["stashNote"] = stash_note
+    return store.create_batch(project_key, selection)
+
+
+def _stash_user_changes(project_key: str) -> str | None:
+    """SonarFix commits on a fresh branch, so it needs a clean tree. Rather
+    than make the user commit or stash by hand, set their work aside safely
+    (see RepoWorkspace.stash_changes) and report what was done."""
+    project = project_with_repo(project_key) or {}
+    if not project.get("repo_path"):
+        return None  # classify() reports the missing repo with a clearer message
+    try:
+        return RepoWorkspace(project["repo_path"]).stash_changes()
+    except RepoError as exc:
+        raise BatchError(
+            f"Your uncommitted changes could not be stashed automatically ({exc}). "
+            "Commit or stash them, then retry."
+        ) from exc
 
 
 # --- execution ---------------------------------------------------------------
@@ -172,6 +185,10 @@ def run(batch_id: int) -> None:
     base = branch = None
     try:
         selection = batch["selection"] or {}
+        stash_note = _stash_user_changes(batch["project_key"]) or selection.get("stashNote")
+        if stash_note:
+            _step(steps, batch_id, kind="info", title="Saved your uncommitted changes",
+                  status="done", detail=stash_note)
         occurrences, workspace = classify(batch["project_key"])
         groups = {g.id: g for g in build_groups(occurrences)}
         mech_groups = [groups[g] for g in selection.get("mechanical", []) if g in groups]
@@ -447,20 +464,18 @@ def fix_single(issue_id: str, notes: str = "") -> dict[str, Any]:
         raise BatchError(f"Unknown issue: {issue_id}")
     project_key = issue["project_key"]
 
+    stash_note = _stash_user_changes(project_key)
     occurrences, workspace = classify(project_key)
     target = next((o for o in occurrences if o.issue["id"] == issue_id), None)
     if target is None:
         raise BatchError(f"{issue_id} is not in the current plan for {project_key}.")
     if target.bucket == "skip":
         raise BatchError(f"{issue_id} is in skipped code: {target.skip_reason}")
-    if workspace.is_dirty():
-        raise BatchError(
-            f"{workspace.path} has uncommitted changes; commit or stash them first."
-        )
 
-    batch_id = store.create_batch(
-        project_key, {"mechanical": [], "ai": [], "notes": notes, "singleIssue": issue_id}
-    )
+    selection = {"mechanical": [], "ai": [], "notes": notes, "singleIssue": issue_id}
+    if stash_note:
+        selection["stashNote"] = stash_note
+    batch_id = store.create_batch(project_key, selection)
     project = store.get_project(project_key) or {}
     base = workspace.safe_base_branch(project.get("default_branch"))
     if not project.get("default_branch") and not is_generated_branch(base):
@@ -469,6 +484,9 @@ def fix_single(issue_id: str, notes: str = "") -> dict[str, Any]:
     store.update_batch(batch_id, status="running", base_branch=base, branch=branch)
 
     steps: list[dict[str, Any]] = []
+    if stash_note:
+        steps.append({"kind": "info", "title": "Saved your uncommitted changes",
+                      "status": "done", "detail": stash_note})
     try:
         if target.bucket == "mechanical":
             group = Group("mechanical", target.issue.get("rule") or "unknown", [target])

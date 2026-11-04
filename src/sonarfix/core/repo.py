@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 _SLUG_RE = re.compile(r"[^a-zA-Z0-9._-]+")
@@ -115,6 +116,23 @@ class RepoWorkspace:
         """
         return bool(self._git("status", "--porcelain", "-uall").strip())
 
+    def stash_changes(self) -> str | None:
+        """Set the user's uncommitted work aside so a fix can start clean.
+
+        Nothing is lost: it goes into a labelled `git stash` (untracked files
+        included) that `git stash pop` brings straight back. Returns a
+        sentence telling the user that, or None when there was nothing to save.
+        """
+        if not self.is_dirty():
+            return None
+        label = f"SonarFix auto-stash {datetime.now():%Y-%m-%d %H:%M:%S}"
+        self._git("stash", "push", "--include-untracked", "-m", label)
+        return (
+            f"Your uncommitted changes in {self.path} were saved to a git stash "
+            f'("{label}") so the fix could start from a clean tree. '
+            "Restore them any time with `git stash pop`."
+        )
+
     def safe_base_branch(self, known_default: str | None) -> str:
         """The branch a new fix/batch branch should be created from.
 
@@ -192,8 +210,47 @@ class RepoWorkspace:
 
     # --- reading ------------------------------------------------------------
 
+    def _tracked_files(self) -> list[str]:
+        if getattr(self, "_index", None) is None:
+            try:
+                out = self._git("ls-files", "-z", "--cached", "--others", "--exclude-standard")
+            except RepoError:
+                out = ""
+            self._index = [p for p in out.split("\x00") if p]
+        return self._index
+
+    def locate(self, file_path: str) -> str:
+        """The repo-relative path a Sonar-reported file really lives at.
+
+        Sonar paths are relative to each project's own sonar.sources folder,
+        which can sit several levels below the folder SonarFix guesses (e.g.
+        'IIFBulkDelete/Program.cs' reported, 'IIFBulkDelete/IIFBulkDelete/
+        Program.cs' on disk). If the path as given exists it is returned
+        unchanged; otherwise the tracked file whose path ends the same way is
+        used - the longest matching ending wins, ties broken by the leading
+        folder Sonar named. Ambiguous or missing -> the original path.
+        """
+        if not file_path or (self.path / file_path).is_file():
+            return file_path
+        wanted = file_path.replace("\\", "/").strip("/").split("/")
+        candidates = [p for p in self._tracked_files() if p.rsplit("/", 1)[-1] == wanted[-1]]
+        if not candidates:
+            return file_path
+
+        def suffix_len(path: str) -> int:
+            parts, n = path.split("/"), 0
+            while n < min(len(parts), len(wanted)) and parts[-1 - n] == wanted[-1 - n]:
+                n += 1
+            return n
+
+        best = max(suffix_len(p) for p in candidates)
+        top = [p for p in candidates if suffix_len(p) == best]
+        if len(top) > 1:
+            top = [p for p in top if p.startswith(wanted[0] + "/")] or top
+        return top[0] if len(top) == 1 else file_path
+
     def resolve(self, file_path: str) -> Path:
-        target = (self.path / file_path).resolve()
+        target = (self.path / self.locate(file_path)).resolve()
         if not str(target).startswith(str(self.path)):
             raise RepoError(f"Path escapes the repository: {file_path}")
         return target

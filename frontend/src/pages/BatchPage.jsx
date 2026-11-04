@@ -6,6 +6,7 @@ import ErrorBanner from "../components/ErrorBanner";
 import Stepper from "../components/Stepper";
 import BuildStatusBadge from "../components/BuildStatusBadge";
 import TerminalLog from "../components/TerminalLog";
+import BuildFailureSummary from "../components/BuildFailureSummary";
 import { useStatus } from "../status";
 
 const ACTIVE = new Set(["queued", "running"]);
@@ -219,6 +220,7 @@ export default function BatchPage() {
                 Studio) to double-check.
               </p>
             )}
+            <BuildFailureSummary summary={batch.build_summary} />
             <TerminalLog title="Build log" output={batch.build_output} />
             <TerminalLog title="Test log" output={batch.test_output} />
             <p>
@@ -324,7 +326,7 @@ function StepCard({ step }) {
         <div className="step-title">
           <strong>{step.kind === "mechanical" ? "Mechanical recipes" : step.title}</strong>
           <span className="caption">
-            {step.kind === "mechanical" ? "0 tokens" : `AI session · ${step.rule}`}
+            {step.kind === "mechanical" ? "0 tokens" : step.kind === "info" ? step.detail : `AI session · ${step.rule}`}
             {step.commit && <> · commit <code>{step.commit}</code></>}
           </span>
         </div>

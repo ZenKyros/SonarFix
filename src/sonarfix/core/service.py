@@ -13,6 +13,7 @@ from . import issues as issues_
 from . import sonar, store
 from .config import CLAUDE_MODELS, ConfigError, get_settings
 from .repo import RepoError, RepoWorkspace
+from .repo_binding import project_with_repo
 
 
 class ServiceError(RuntimeError):
@@ -228,7 +229,7 @@ def dashboard_summary() -> dict[str, Any]:
         projects.append({
             "key": key,
             "name": project["name"],
-            "repo_configured": bool(project.get("repo_path")),
+            "repo_configured": bool((store.get_project(key) or project).get("repo_path")),
             "last_synced_at": project.get("last_synced_at"),
             "total_issues": len(issues),
             "open_issues": len(issues) - fixed_count,
@@ -264,7 +265,7 @@ def scan_dependencies(project_key: str) -> dict[str, Any]:
     major (needs a human to read the changelog) bump. Human-triggered, like
     sync_issues - never run implicitly, since it shells out to dotnet/npm
     and calls OSV.dev."""
-    project = store.get_project(project_key)
+    project = project_with_repo(project_key)
     if not project:
         raise ServiceError(f"Unknown project: {project_key}")
     repo_path = project.get("repo_path")
@@ -284,7 +285,7 @@ def analyze_dependency(dep_id: int, target_version: str | None = None) -> dict[s
     dep = store.get_dependency(dep_id)
     if not dep:
         raise ServiceError(f"Unknown dependency: {dep_id}")
-    project = store.get_project(dep["project_key"])
+    project = project_with_repo(dep["project_key"])
     repo_path = (project or {}).get("repo_path")
     if not repo_path:
         raise ServiceError("No local repository configured for this project yet.")
@@ -308,7 +309,7 @@ def issue_detail(issue_id: str) -> dict[str, Any]:
     if not issue:
         raise ServiceError(f"Unknown issue: {issue_id}")
 
-    project = store.get_project(issue["project_key"]) or {}
+    project = project_with_repo(issue["project_key"]) or {}
     detail: dict[str, Any] = {
         "issue": issue,
         "project": project,
@@ -330,6 +331,7 @@ def issue_detail(issue_id: str) -> dict[str, Any]:
 
     try:
         workspace = RepoWorkspace(repo_path)
+        issue["file_path"] = workspace.locate(issue["file_path"])
         detail["code_context"] = workspace.context_slice(
             issue["file_path"], issue.get("line"), get_settings().context_radius
         )

@@ -322,19 +322,9 @@ export default function IssuesPage() {
   );
 }
 
-function FixTag({ kind }) {
-  if (kind === "mechanical")
-    return (
-      <span className="fix-tag fix-auto" title="A deterministic recipe fixes every occurrence instantly - no AI, no cost.">
-        Auto-fix
-      </span>
-    );
-  if (kind === "ai")
-    return (
-      <span className="fix-tag fix-ai" title="No automatic recipe exists - fixing this needs an AI-generated change you review and approve.">
-        Needs AI
-      </span>
-    );
+// Every fixable issue goes through the AI path now, so a per-row fix-type tag
+// would only repeat itself on every line.
+function FixTag() {
   return null;
 }
 

@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from ..core import batch, engine, planner, report, scm, service, setup, sonar, store
+from ..core import batch, build_summary, engine, planner, report, scm, service, setup, sonar, store
 from ..core.config import (
     CLAUDE_MODELS,
     RESOURCE_ROOT,
@@ -411,7 +411,7 @@ def get_batch(batch_id: int) -> dict[str, Any]:
     found = store.get_batch(batch_id)
     if not found:
         raise HTTPException(status_code=404, detail=f"Unknown batch: {batch_id}")
-    return found
+    return {**found, "build_summary": build_summary.for_run(found)}
 
 
 @app.get("/batches/{batch_id}/report")

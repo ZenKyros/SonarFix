@@ -181,20 +181,110 @@ def _prerequisite_builds(csproj: Path, repo_root: Path) -> list[list[str]]:
             continue
         seen.add(candidates[0])
         steps.append([
-            msbuild, str(candidates[0]), "/restore", "/p:RestorePackagesConfig=true",
-            # packages.config projects restore into $(SolutionDir)packages; with no
-            # .sln in play, point it at the project's own folder.
-            f"/p:SolutionDir={project_dir}{os.sep}",
+            msbuild, str(candidates[0]), *_restore_args(candidates[0]),
             f"/p:Configuration={config.group(1)}",
             *_MSBUILD_ARGS,
         ])
     return steps
 
 
+def _restore_args(csproj: Path) -> list[str]:
+    """Restore a packages.config project's NuGet packages as part of its build.
+
+    Those projects reference packages through a HintPath like
+    ../packages/log4net.3.0.4/lib/net462/log4net.dll, i.e. a `packages` folder
+    next to (not inside) the project. A fresh clone has none, so the build
+    fails with CS0246 on every package type - not a problem with the fix.
+    Restore into the folder the HintPath expects; failing that, the nearest
+    folder holding a .sln, else the project's own.
+    """
+    try:
+        text = csproj.read_text(encoding="utf-8-sig", errors="replace")
+    except OSError:
+        text = ""
+    solution_dir = None
+    for hint in _HINT_PATH_RE.findall(text):
+        if "$(" in hint:
+            continue
+        resolved = (csproj.parent / hint.replace("\\", "/")).resolve()
+        solution_dir = next((p.parent for p in resolved.parents if p.name.lower() == "packages"), None)
+        if solution_dir:
+            break
+    if solution_dir is None:
+        solution_dir = next(
+            (p for p in (csproj.parent, *csproj.parent.parents) if any(p.glob("*.sln"))),
+            csproj.parent,
+        )
+    return ["/restore", "/p:RestorePackagesConfig=true", f"/p:SolutionDir={solution_dir}{os.sep}"]
+
+
+_REFERENCE_RE = re.compile(r'<Reference\s+Include="([^"]+)"\s*(?:/>|>(.*?)</Reference>)', re.I | re.S)
+_ASSEMBLY_NAME_RE = re.compile(r"<AssemblyName>\s*([^<]+?)\s*</AssemblyName>", re.I)
+_SKIP_DIRS = {"packages", "obj", "bin", "node_modules", ".git"}
+
+
+def _repo_assemblies(repo_root: Path) -> dict[str, Path]:
+    """assembly name -> the project in this repo that builds it."""
+    found: dict[str, Path] = {}
+    for pattern in _DOTNET_GLOBS:
+        for project in repo_root.rglob(pattern):
+            if _SKIP_DIRS.intersection(part.lower() for part in project.relative_to(repo_root).parts):
+                continue
+            try:
+                match = _ASSEMBLY_NAME_RE.search(project.read_text(encoding="utf-8-sig", errors="replace"))
+            except OSError:
+                continue
+            found.setdefault(match.group(1) if match else project.stem, project)
+    return found
+
+
+def _sibling_assembly_builds(csproj: Path, repo_root: Path) -> tuple[list[list[str]], list[str]]:
+    """Builds for in-repo projects that produce a DLL this project references
+    by name, plus the folders their output lands in (for /p:ReferencePath).
+
+    A <Reference Include="Some.Company.Lib"> whose HintPath points at a GAC or
+    install folder that does not exist on this machine can still be satisfied
+    from the monorepo itself when another project builds that assembly.
+    """
+    msbuild = _find_msbuild()
+    if not msbuild:
+        return [], []
+    try:
+        text = csproj.read_text(encoding="utf-8-sig", errors="replace")
+    except OSError:
+        return [], []
+
+    assemblies: dict[str, Path] | None = None
+    steps: list[list[str]] = []
+    ref_dirs: list[str] = []
+    for match in _REFERENCE_RE.finditer(text):
+        name = match.group(1).split(",")[0].strip()
+        hint = _HINT_PATH_RE.search(match.group(2) or "")
+        if hint and "$(" not in hint.group(1) and (csproj.parent / hint.group(1).replace("\\", "/")).exists():
+            continue  # already satisfied
+        if assemblies is None:
+            assemblies = _repo_assemblies(repo_root)
+        owner = assemblies.get(name)
+        if not owner or owner == csproj:
+            continue
+        out_dir = f"bin{os.sep}Debug{os.sep}"
+        steps.append([
+            msbuild, str(owner), *_restore_args(owner),
+            "/p:Configuration=Debug", f"/p:OutputPath={out_dir}",
+            *_MSBUILD_ARGS,
+        ])
+        ref_dirs.append(str(owner.parent / out_dir))
+    return steps, ref_dirs
+
+
 def _dotnet_commands(csproj: Path, repo_root: Path) -> _Commands:
     dotnet = shutil.which("dotnet")
     msbuild = _find_msbuild()
     prerequisites = _prerequisite_builds(csproj, repo_root)
+    sibling_steps, ref_dirs = _sibling_assembly_builds(csproj, repo_root)
+    already = {step[1] for step in prerequisites}
+    prerequisites += [step for step in sibling_steps if step[1] not in already]
+    reference_path = [f"/p:ReferencePath={';'.join(ref_dirs)}"] if ref_dirs else []
     if _is_sdk_style(csproj) and dotnet:
         return _Commands(
             build=[*prerequisites, [dotnet, "build", str(csproj), "--nologo", "-v", "minimal"]],
@@ -202,7 +292,11 @@ def _dotnet_commands(csproj: Path, repo_root: Path) -> _Commands:
         )
     if msbuild:
         return _Commands(
-            build=[*prerequisites, [msbuild, str(csproj), *_MSBUILD_ARGS]], test=None
+            build=[
+                *prerequisites,
+                [msbuild, str(csproj), *_restore_args(csproj), *reference_path, *_MSBUILD_ARGS],
+            ],
+            test=None,
         )
     if dotnet:
         return _Commands(

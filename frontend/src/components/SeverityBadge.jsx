@@ -1,5 +1,5 @@
 const COLORS = {
-  BLOCKER: "#8b0000",
+  BLOCKER: "#b3202b",
   CRITICAL: "#d64545",
   MAJOR: "#e08e2b",
   MINOR: "#3b82c4",
@@ -22,7 +22,7 @@ export const SEVERITY_LABEL = {
 export default function SeverityBadge({ severity }) {
   const color = COLORS[severity] || COLORS.INFO;
   return (
-    <span className="badge" style={{ background: color }}>
+    <span className="badge" style={{ "--sev": color }}>
       {SEVERITY_LABEL[severity] || severity}
     </span>
   );

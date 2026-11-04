@@ -17,9 +17,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from . import store
+from . import build_summary, store
 from .recipes import Recipe, recipe_for, target_from
 from .repo import RepoWorkspace
+from .repo_binding import project_with_repo
 
 BUCKET_ORDER = {"mechanical": 0, "ai": 1, "skip": 2}
 
@@ -200,7 +201,7 @@ def _snippet(lines: list[str], line: int | None, radius: int = 2) -> str | None:
 
 
 def classify(project_key: str) -> tuple[list[Occurrence], RepoWorkspace]:
-    project = store.get_project(project_key)
+    project = project_with_repo(project_key)
     if not project:
         raise ValueError(f"Unknown project: {project_key}")
     if not project.get("repo_path"):
@@ -226,7 +227,8 @@ def classify(project_key: str) -> tuple[list[Occurrence], RepoWorkspace]:
 
     for issue in store.list_issues(project_key, include_raw=True):
         raw = json.loads(issue.get("raw_json") or "{}")
-        file_path = issue.get("file_path") or ""
+        file_path = workspace.locate(issue.get("file_path") or "")
+        issue["file_path"] = file_path
         occ = Occurrence(issue=issue, raw=raw, bucket="ai")
 
         src = source(file_path)
@@ -247,18 +249,8 @@ def classify(project_key: str) -> tuple[list[Occurrence], RepoWorkspace]:
             occ.bucket = "skip"
         elif src is None:
             occ.note = "File not found in the local clone - is it on the scanned branch?"
-        else:
-            recipe = recipe_for(issue.get("rule"))
-            if recipe:
-                after = recipe.apply(src.lines, target)
-                if after is not None:
-                    occ.bucket, occ.recipe = "mechanical", recipe
-                    occ.diff = unified_diff(file_path, src.lines, after)
-                else:
-                    occ.note = (
-                        "A recipe exists for this rule, but the code at the reported "
-                        "location did not match - the clone may differ from the scan."
-                    )
+        # Every fixable issue goes to the AI path: the deterministic-recipe
+        # ("mechanical") bucket is retired, so there is one way to fix things.
         result.append(occ)
 
     # A duplicate follows its primary, so both land in the same group.
@@ -328,6 +320,7 @@ def resolved_plan(project_key: str) -> dict[str, Any]:
     batches = store.resolved_batches(project_key)
     for batch in batches:
         batch["confidence"] = confidence_for(batch)
+        batch["build_summary"] = build_summary.for_run(batch)
     return {
         "project": {"key": project_key, "name": project.get("name") or project_key},
         "batches": batches,
