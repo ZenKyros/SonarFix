@@ -12,7 +12,7 @@ import traceback
 from collections import defaultdict
 from typing import Any
 
-from . import build, engine, scm, sonar, store
+from . import activity, build, engine, scm, sonar, store
 from .config import get_settings
 from .planner import Group, Occurrence, SourceFile, build_groups, classify
 from .recipes import target_from
@@ -178,8 +178,20 @@ def run(batch_id: int) -> None:
     batch = store.get_batch(batch_id)
     if not batch or batch["status"] != "queued":
         return
+    with activity.scope(batch_id=batch_id, project_key=batch["project_key"]):
+        _run(batch_id, batch)
+
+
+def _run(batch_id: int, batch: dict[str, Any]) -> None:
     steps: list[dict[str, Any]] = []
     store.update_batch(batch_id, status="running", steps=steps)
+    selection_info = batch["selection"] or {}
+    activity.log(
+        "batch", f"Batch #{batch_id} started",
+        f"{len(selection_info.get('mechanical', []))} mechanical group(s), "
+        f"{len(selection_info.get('ai', []))} AI group(s)."
+        + (f"\n\nReviewer notes:\n{selection_info['notes']}" if selection_info.get("notes") else ""),
+    )
 
     workspace = None
     base = branch = None
@@ -200,6 +212,7 @@ def run(batch_id: int) -> None:
             store.set_default_branch(batch["project_key"], base)
         branch = workspace.start_branch(f"{branch_prefix()}-batch-{batch_id}")
         store.update_batch(batch_id, base_branch=base, branch=branch)
+        activity.log("batch", f"Created branch {branch}", f"Based on {base}.")
 
         if mech_groups:
             step = _step(steps, batch_id, kind="mechanical", title="Mechanical recipes", status="running")
@@ -220,6 +233,11 @@ def run(batch_id: int) -> None:
             sha, _ = _commit_if_changed(workspace, message) if applied else (None, "")
             step.update(status="done" if sha else "no_change", commit=sha, applied=applied, failed=failed)
             _save(steps, batch_id)
+            activity.log(
+                "batch", f"Mechanical recipes: {len(applied)} applied, {len(failed)} skipped",
+                f"Commit {sha}" if sha else "No commit - nothing changed.",
+                level="warn" if failed else "info",
+            )
 
         settings = get_settings()
         for group in ai_groups:
@@ -227,6 +245,7 @@ def run(batch_id: int) -> None:
                 steps, batch_id, kind="ai", group=group.id, rule=group.rule,
                 title=group.occurrences[0].issue.get("message"), status="running",
             )
+            activity.log("task", f"Task: fix rule {group.rule}", step["title"] or "", data={"group": group.id})
             try:
                 rule = sonar.get_rule(group.rule)
             except Exception:  # noqa: BLE001 - rule text is optional context
@@ -240,6 +259,7 @@ def run(batch_id: int) -> None:
                 workspace.discard_changes()
                 step.update(status="failed", error=f"AI session failed: {exc}")
                 _save(steps, batch_id)
+                activity.log("task", f"Task failed: rule {group.rule}", str(exc), level="error")
                 continue
             primary = [o for o in group.occurrences if not o.duplicate_of]
             sha, _ = _commit_if_changed(
@@ -256,17 +276,24 @@ def run(batch_id: int) -> None:
                 occurrences=[o.as_dict() for o in primary],
             )
             _save(steps, batch_id)
+            activity.log(
+                "task", f"Task done: rule {group.rule} ({len(primary)} occurrence(s))",
+                (f"Commit {sha}\n\n" if sha else "AI made no change.\n\n") + (fix.get("changes_summary") or ""),
+                level="info" if sha else "warn",
+            )
 
         diff = workspace.diff_between(base, branch)
         if not diff.strip():
             workspace.abandon(base, branch)
             store.update_batch(batch_id, status="no_changes", branch=None, steps=steps)
+            activity.log("batch", "Batch finished with no changes", "Nothing was changed, so the branch was removed.", level="warn")
             return
 
         # Stop here - nothing builds or gets a PR until a human clicks
         # "Build" (see request_build). The workspace stays on `branch`;
         # that's what gets built.
         store.update_batch(batch_id, status="awaiting_build", diff=diff, steps=steps)
+        activity.log("batch", "Fixes applied - waiting for you to build", "Nothing is built or pushed until you click Build.")
     except Exception as exc:  # noqa: BLE001 - record, never crash the worker
         if workspace and base:
             try:
@@ -277,6 +304,7 @@ def run(batch_id: int) -> None:
             batch_id, status="failed", steps=steps,
             error=f"{exc}\n\n{traceback.format_exc(limit=3)}",
         )
+        activity.log("batch", f"Batch #{batch_id} failed", str(exc), level="error")
 
 
 # --- build verification --------------------------------------------------------
@@ -309,7 +337,15 @@ def request_build(batch_id: int) -> dict[str, Any]:
     workspace = RepoWorkspace(project["repo_path"])
     changed_files = workspace.diff_files_between(batch_row["base_branch"], batch_row["branch"])
 
-    result = build.verify(str(workspace.path), changed_files)
+    with activity.scope(batch_id=batch_id, project_key=batch_row["project_key"]):
+        activity.log("build", "Build started", f"Verifying {len(changed_files)} changed file(s) and what depends on them.")
+        result = build.verify(str(workspace.path), changed_files)
+        activity.log(
+            "build", f"Build {result['status']}",
+            "\n".join((result.get("output") or "").strip().splitlines()[-12:]),
+            level="info" if result["success"] else "error",
+            data={"test_status": result.get("test_status")},
+        )
     if result["status"] == "skipped" or not result["success"]:
         workspace.checkout(batch_row["base_branch"])  # keep the branch - just stop sitting on it
         note = (
@@ -362,6 +398,10 @@ def retry_with_feedback(batch_id: int, feedback: str = "") -> int:
 
     new_id = store.create_batch(old["project_key"], selection)
     store.update_batch(new_id, retry_of=batch_id)
+    activity.log(
+        "review", f"Retry requested: batch #{batch_id} -> #{new_id}",
+        feedback.strip() or "No extra instructions.", batch_id=new_id, project_key=old["project_key"],
+    )
     return new_id
 
 
@@ -373,6 +413,7 @@ def abandon(batch_id: int) -> dict[str, Any]:
     if batch_row["status"] != "build_failed":
         raise BatchError(f"Batch {batch_id} has no failed build to abandon.")
     store.update_batch(batch_id, status="failed")
+    activity.log("review", "Reviewer gave up on this batch", batch_id=batch_id, project_key=batch_row["project_key"])
     return store.get_batch(batch_id) or {}
 
 

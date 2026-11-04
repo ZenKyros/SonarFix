@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from ..core import batch, build_summary, engine, planner, report, scm, service, setup, sonar, store
+from ..core import activity, batch, build_summary, engine, planner, report, scm, service, setup, sonar, store
 from ..core.config import (
     CLAUDE_MODELS,
     RESOURCE_ROOT,
@@ -404,6 +404,17 @@ def post_batch(project_key: str, body: BatchBody, background: BackgroundTasks) -
 @app.get("/projects/{project_key}/batches")
 def get_batches(project_key: str) -> list[dict[str, Any]]:
     return store.list_batches(project_key)
+
+
+@app.get("/activity")
+def get_activity(
+    batch_id: int | None = None, project_key: str | None = None, after_id: int = 0, limit: int = 300
+) -> list[dict[str, Any]]:
+    """The activity log - everything the AI and SonarFix did, oldest first.
+    Pass `after_id` (the last id you have) to fetch only newer events."""
+    return activity.list_events(
+        batch_id=batch_id, project_key=project_key, after_id=after_id, limit=limit
+    )
 
 
 @app.get("/batches/{batch_id}")

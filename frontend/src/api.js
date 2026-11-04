@@ -90,6 +90,7 @@ export const api = {
   createBatch: (key, body) => request("POST", `/projects/${key}/batches`, { json: body }),
   listBatches: (key) => request("GET", `/projects/${key}/batches`),
   getBatch: (id) => request("GET", `/batches/${id}`),
+  getActivity: (params) => request("GET", "/activity", { params }),
   batchReportUrl: (id) => `${API_URL}/batches/${id}/report`,
   buildBatch: (id) => request("POST", `/batches/${id}/build`),
   retryBatch: (id, feedback) =>

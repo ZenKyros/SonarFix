@@ -91,6 +91,66 @@ _NEXT_STEPS = {
 }
 
 
+# category -> how to stop this class of failure happening again
+_PREVENT = {
+    "missing-ref": "Keep packages restorable (VPN on, package source reachable) and build the whole solution once in Visual Studio before running SonarFix, so project and DLL references exist on disk.",
+    "restore": "Run SonarFix on the corporate network or VPN, and check the NuGet package sources in Visual Studio (Tools > NuGet Package Manager > Package Sources).",
+    "tooling": "Install the Visual Studio workloads the solution needs (Visual Studio Installer > Modify) and make sure the .NET SDK version matches global.json.",
+    "code": "Ask the AI to build-check each change before finishing, and approve fewer AI groups per batch so one bad fix is easy to find.",
+    "syntax": "Review the AI diff before building; a small batch makes a typo easy to spot.",
+    "other": "Open the solution in Visual Studio, build it, and read the Error List for the first error.",
+}
+
+
+def _recommendations(
+    reasons: list[dict[str, Any]], errors: list[dict[str, Any]], cause: str
+) -> list[dict[str, Any]]:
+    """Concrete next actions. `ai` ones carry a ready-made prompt the UI can
+    send straight to a retry; `manual` ones are things only the user can do."""
+    recs: list[dict[str, Any]] = []
+    own = [e for e in errors if e["in_changed"] and e["category"] in {"code", "syntax", "missing-ref"}]
+    if own:
+        listing = "\n".join(
+            f"- {e['file'] or '?'}:{e['line'] or '?'}  {e['code']}: {e['message']}" for e in own[:15]
+        )
+        recs.append({
+            "id": "ai-fix-errors", "kind": "ai", "recommended": cause != "environment",
+            "title": "Let the AI fix the compile errors in the changed files",
+            "why": f"{len(own)} error(s) are in files this fix edited, so the AI can correct them directly.",
+            "prompt": "The build failed with errors in files you changed. Fix exactly these without "
+                      "changing behaviour, and make sure each file still compiles:\n" + listing,
+        })
+    cats = {r["category"] for r in reasons}
+    if "missing-ref" in cats or "restore" in cats:
+        recs.append({
+            "id": "restore-and-retry", "kind": "manual", "recommended": cause == "environment",
+            "title": "Restore packages, build once in Visual Studio, then retry",
+            "why": "Missing libraries are a machine/setup problem; the AI cannot install packages for you.",
+            "steps": [
+                "Connect to the VPN / corporate network.",
+                "Open the solution in Visual Studio and run Build > Rebuild Solution once.",
+                "Come back here and press Retry.",
+            ],
+        })
+    if "tooling" in cats:
+        recs.append({
+            "id": "install-tooling", "kind": "manual", "recommended": False,
+            "title": "Install the missing Visual Studio / .NET component",
+            "why": "MSBuild could not find a target or component the project needs.",
+            "steps": ["Open Visual Studio Installer, choose Modify, add the workload the error names, then Retry."],
+        })
+    if cause == "environment" and not own:
+        recs.append({
+            "id": "ai-retry-skip", "kind": "ai", "recommended": False,
+            "title": "Ask the AI to double-check its change anyway",
+            "why": "The failure looks unrelated to the fix, but you can have the AI re-verify it.",
+            "prompt": "The build failed with missing-library errors that look unrelated to your change. "
+                      "Re-read your edits, confirm they only use types already available in each project, "
+                      "and fix anything that could break the build.",
+        })
+    return recs
+
+
 def summarize(
     build_output: str | None, changed_files: list[str] | None = None, status: str | None = "failed"
 ) -> dict[str, Any] | None:
@@ -156,6 +216,16 @@ def summarize(
         if step and step not in steps:
             steps.append(step)
 
+    flat = []
+    for err in errors[:200]:
+        category, title, _ = _classify(err["code"])
+        flat.append({
+            **err, "category": category, "title": title,
+            "in_changed": bool(err["file"] and _in_changed(err["file"], changed)),
+        })
+    for g in reasons:
+        g["prevent"] = _PREVENT.get(g["category"], _PREVENT["other"])
+
     return {
         "cause": cause,
         "cause_label": label,
@@ -163,6 +233,8 @@ def summarize(
         "total_errors": len(errors),
         "reasons": reasons,
         "next_steps": steps,
+        "errors": flat,
+        "recommendations": _recommendations(reasons, flat, cause),
     }
 
 

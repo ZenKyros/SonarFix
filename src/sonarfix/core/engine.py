@@ -14,13 +14,14 @@ the whole workflow async.
 from __future__ import annotations
 
 import asyncio
+import functools
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Coroutine, TypeVar
 
 from pydantic import BaseModel
 
-from . import claude_code, mcp
+from . import activity, claude_code, mcp
 from .agents import (
     FixOutcome,
     IssueAnalysis,
@@ -80,6 +81,21 @@ async def _deepagents_run(
 # --- public API --------------------------------------------------------------
 
 
+def _logged(label: str):
+    """Record each AI session (what it was asked, how long it took, whether it failed)."""
+
+    def wrap(func):
+        @functools.wraps(func)
+        def inner(repo_path, task, *args, **kwargs):
+            with activity.timed("ai", f"AI {label}", f"Engine: {describe()}\n\nTask given to the AI:\n{task[:2500]}"):
+                return func(repo_path, task, *args, **kwargs)
+
+        return inner
+
+    return wrap
+
+
+@_logged("analysis")
 def run_analysis(repo_path: str | Path, task: str) -> dict[str, Any]:
     """Steps 4-6: explain the issue and plan the fix. Must not write."""
     if get_settings().engine == "claude-code":
@@ -97,6 +113,7 @@ def run_analysis(repo_path: str | Path, task: str) -> dict[str, Any]:
     )
 
 
+@_logged("fix")
 def run_fix(repo_path: str | Path, task: str) -> dict[str, Any]:
     """Step 8: implement the approved plan in the working tree."""
     if get_settings().engine == "claude-code":
@@ -120,6 +137,7 @@ PR_SYSTEM_PROMPT = (
 )
 
 
+@_logged("pull request text")
 def run_pr_text(repo_path: str | Path, task: str) -> dict[str, Any]:
     """Steps 9-10: commit message and PR description, written from the diff.
 

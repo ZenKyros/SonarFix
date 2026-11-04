@@ -7,6 +7,7 @@ import Stepper from "../components/Stepper";
 import BuildStatusBadge from "../components/BuildStatusBadge";
 import TerminalLog from "../components/TerminalLog";
 import BuildFailureSummary from "../components/BuildFailureSummary";
+import ActivityLog from "../components/ActivityLog";
 import { useStatus } from "../status";
 
 const ACTIVE = new Set(["queued", "running"]);
@@ -98,11 +99,11 @@ export default function BatchPage() {
     }
   };
 
-  const doRetry = async () => {
+  const doRetry = async (override) => {
     setError(null);
     setBusy("retry");
     try {
-      const text = buildFeedback;
+      const text = typeof override === "string" ? override : buildFeedback;
       setBuildFeedback("");
       const fresh = await api.retryBatch(batchId, text);
       navigate(`/batches/${fresh.id}`);
@@ -220,7 +221,7 @@ export default function BatchPage() {
                 Studio) to double-check.
               </p>
             )}
-            <BuildFailureSummary summary={batch.build_summary} />
+            <BuildFailureSummary summary={batch.build_summary} onApply={doRetry} busy={busy === "retry"} />
             <TerminalLog title="Build log" output={batch.build_output} />
             <TerminalLog title="Test log" output={batch.test_output} />
             <p>
@@ -235,7 +236,7 @@ export default function BatchPage() {
               onChange={(e) => setBuildFeedback(e.target.value)}
             />
             <div className="button-row">
-              <button className="btn btn-primary" onClick={doRetry} disabled={busy === "retry"}>
+              <button className="btn btn-primary" onClick={() => doRetry()} disabled={busy === "retry"}>
                 {busy === "retry" ? "Retrying…" : "Retry with feedback"}
               </button>
               <button className="btn" onClick={doAbandon} disabled={busy === "abandon"}>
@@ -313,6 +314,8 @@ export default function BatchPage() {
           )}
         </section>
       )}
+
+      <ActivityLog batchId={batchId} live={ACTIVE.has(batch.status)} />
     </div>
   );
 }

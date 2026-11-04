@@ -1188,3 +1188,45 @@ a.btn { text-decoration: none; }
 .page .btn-ghost { border: 1px solid var(--border); color: var(--navy); }
 .page .btn-ghost:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
 .page .btn-primary { border-color: var(--accent); color: #fff; }
+
+/* --- error list, recommendations, activity log ---------------------------- */
+.mono { font-family: var(--mono); font-size: 0.8rem; }
+.fail-prevent { margin: 6px 0 0; font-size: 0.88rem; padding: 8px 10px; background: var(--accent-soft); border-radius: var(--radius-sm); }
+.errlist { border: 1px solid var(--border-soft); border-radius: var(--radius); overflow: hidden; margin-bottom: 8px; background: var(--bg); }
+.errlist-bar { display: flex; align-items: center; gap: 14px; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--border-soft); font-size: 0.85rem; }
+.errlist-count { color: var(--danger); font-weight: 700; }
+.errlist-filter { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--text-muted); cursor: pointer; }
+.errlist-scroll { max-height: 280px; overflow: auto; }
+.errlist table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.errlist th { position: sticky; top: 0; background: var(--surface); text-align: left; padding: 6px 10px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); border-bottom: 1px solid var(--border-soft); }
+.errlist td { padding: 6px 10px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+.errlist-mine { background: var(--danger-soft); }
+.errlist-x { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 0.6rem; align-items: center; justify-content: center; }
+.errlist-tag { margin-left: 8px; font-family: var(--font); font-size: 0.68rem; font-weight: 700; color: var(--danger); }
+.errlist-empty { text-align: center; color: var(--text-muted); padding: 14px; }
+.recs { display: grid; gap: 10px; }
+.rec { background: var(--bg); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 12px 14px; }
+.rec-top { border-color: var(--accent); background: var(--accent-soft); }
+.rec-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.rec-badge { font-size: 0.68rem; font-weight: 700; background: var(--navy); color: #fff; padding: 1px 8px; border-radius: 999px; }
+.rec-kind { margin-left: auto; font-size: 0.72rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.rec-why { margin: 4px 0 6px; color: var(--text-muted); font-size: 0.9rem; }
+.rec-toggle { background: none; border: 0; padding: 0; color: var(--navy-soft); text-decoration: underline; cursor: pointer; font-size: 0.8rem; }
+.rec-prompt pre, .act-detail { margin: 8px 0; padding: 10px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); font-family: var(--mono); font-size: 0.78rem; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; }
+.act-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip-btn { cursor: pointer; border: 1px solid var(--border-soft); background: var(--surface); }
+.chip-on { background: var(--navy); color: #fff; }
+.act { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow: auto; }
+.act-item { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border-soft); font-size: 0.85rem; }
+.act-dot { flex: none; width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: var(--accent); }
+.act-warn .act-dot { background: var(--warn); }
+.act-error .act-dot { background: var(--danger); }
+.act-error .act-title { color: var(--danger); }
+.act-main { min-width: 0; flex: 1; }
+.act-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.act-time { font-family: var(--mono); font-size: 0.75rem; color: var(--text-faint); }
+.act-kind { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 0 7px; border-radius: 999px; background: var(--border-soft); color: var(--text-muted); }
+.act-kind-ai { background: var(--navy); color: #fff; }
+.act-kind-build { background: var(--warn-soft); }
+.act-took { color: var(--text-faint); font-size: 0.75rem; }
+.act-empty { color: var(--text-muted); padding: 8px 0; }
